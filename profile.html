@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Profile — Kitchen Inventory</title><link rel="stylesheet" href="styles.css"></head>
+<body data-page="profile">
+  <div class="header">
+    <div class="brand"><div class="logo">KI</div><div><h1>Kitchen Inventory</h1><div class="small muted">Your account</div></div></div>
+    <div class="controls"><div class="search-bar" style="width:420px;"><input class="input" id="global-search" placeholder="Search items, e.g., 'milk'"></div><div class="profile-row" style="gap:8px;margin-left:12px"><div class="avatar" id="header-avatar">DU</div><div class="small muted" id="header-user">Demo</div></div></div>
+  </div>
+
+  <div class="container grid">
+    <aside>
+      <nav>
+        <a class="nav-item" data-target="dashboard" href="dashboard.html">🏠 Dashboard</a>
+        <a class="nav-item" data-target="inventory" href="inventory.html">📦 Inventory</a>
+        <a class="nav-item" data-target="forecast" href="forecast.html">📈 Forecast</a>
+        <a class="nav-item" data-target="usage" href="usage.html">📝 Usage</a>
+        <a class="nav-item active" data-target="profile" href="profile.html">👤 Profile</a>
+        <a class="nav-item" data-target="settings" href="settings.html">⚙️ Settings</a>
+      </nav>
+    </aside>
+
+    <main>
+      <div class="card">
+        <h2>Profile</h2>
+        <div class="profile-row" style="margin-top:12px;align-items:flex-start">
+          <div class="avatar" id="profile-avatar-large">DU</div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div id="profile-name" class="larger">Demo User</div>
+                <div id="profile-role" class="small muted">Role: -</div>
+              </div>
+              <div style="text-align:right">
+                <div id="profile-joined" class="small muted">Joined: -</div>
+              </div>
+            </div>
+
+            <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div>
+                <div class="small muted">Email</div>
+                <div id="profile-email" style="font-weight:600">demo@local</div>
+              </div>
+              <div>
+                <div class="small muted">Phone</div>
+                <div id="profile-phone" style="font-weight:600">-</div>
+              </div>
+              <div>
+                <div class="small muted">Location</div>
+                <div id="profile-location" style="font-weight:600">-</div>
+              </div>
+              <div>
+                <div class="small muted">Timezone</div>
+                <div id="profile-tz" style="font-weight:600">Asia/Kolkata</div>
+              </div>
+            </div>
+
+            <div style="margin-top:12px">
+              <div class="small muted">Bio</div>
+              <div id="profile-bio" style="margin-top:6px">This is a demo profile stored locally.</div>
+            </div>
+
+            <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+              <button id="btn-edit-profile" class="btn-ghost">Edit</button>
+              <button id="btn-save-profile" class="btn" style="display:none">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'kitchen_inventory_v1_mp_improved';
+  function getState(){ try{ const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : { user: null, items: [] }; }catch(e){ return { user:null, items: [] }; } }
+  function saveState(st){ localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); }
+
+  const state = getState();
+  const user = state.user || { name: 'Demo User', email: 'demo@local', role: 'admin' };
+  document.getElementById('header-user').textContent = user.name || 'Demo';
+  document.getElementById('profile-name').textContent = user.name || 'Demo User';
+  document.getElementById('profile-email').textContent = user.email || 'demo@local';
+  document.getElementById('profile-role').textContent = 'Role: ' + (user.role || 'admin');
+  // fill richer fields if present
+  document.getElementById('profile-phone').textContent = user.phone || '+91 90000 00000';
+  document.getElementById('profile-location').textContent = user.location || 'Bengaluru, India';
+  document.getElementById('profile-tz').textContent = user.timezone || 'Asia/Kolkata';
+  document.getElementById('profile-bio').textContent = user.bio || 'Food lover. Manages kitchen inventory for demo purposes.';
+  // joined date, either stored or default to today's date in YYYY-MM-DD
+  document.getElementById('profile-joined').textContent = 'Joined: ' + (user.joined || new Date().toISOString().slice(0,10));
+
+  // Edit profile (simple inline editable)
+  document.getElementById('btn-edit-profile').addEventListener('click', ()=>{
+    // turn fields into inputs
+    const nameEl = document.getElementById('profile-name');
+    const emailEl = document.getElementById('profile-email');
+    const phoneEl = document.getElementById('profile-phone');
+    const locEl = document.getElementById('profile-location');
+    const bioEl = document.getElementById('profile-bio');
+
+    nameEl.innerHTML = `<input id="inp-name" class="input" value="${user.name || ''}" />`;
+    emailEl.innerHTML = `<input id="inp-email" class="input" value="${user.email || ''}" />`;
+    phoneEl.innerHTML = `<input id="inp-phone" class="input" value="${user.phone || ''}" />`;
+    locEl.innerHTML = `<input id="inp-loc" class="input" value="${user.location || ''}" />`;
+    bioEl.innerHTML = `<textarea id="inp-bio" class="input" rows="3">${user.bio || ''}</textarea>`;
+
+    document.getElementById('btn-edit-profile').style.display = 'none';
+    document.getElementById('btn-save-profile').style.display = 'inline-block';
+  });
+
+  document.getElementById('btn-save-profile').addEventListener('click', ()=>{
+    const st = getState();
+    const u = st.user || {};
+    u.name = document.getElementById('inp-name').value.trim();
+    u.email = document.getElementById('inp-email').value.trim();
+    u.phone = document.getElementById('inp-phone').value.trim();
+    u.location = document.getElementById('inp-loc').value.trim();
+    u.bio = document.getElementById('inp-bio').value.trim();
+    u.joined = u.joined || new Date().toISOString().slice(0,10);
+    st.user = u;
+    saveState(st);
+    alert('Profile saved locally.');
+    location.reload();
+  });
+})();
+</script>
+</body></html>

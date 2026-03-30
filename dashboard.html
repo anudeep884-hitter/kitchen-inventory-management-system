@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Dashboard — Kitchen Inventory</title><link rel="stylesheet" href="styles.css"></head><body data-page="dashboard">
+  <div class="header">
+    <div class="brand"><div class="logo">KI</div><div><h1>Kitchen Inventory</h1><div class="small muted">Overview</div></div></div>
+    <div class="controls"><div class="search-bar" style="width:420px;"><input class="input" id="global-search" placeholder="Search items"></div><div class="profile-row" style="gap:8px;margin-left:12px"><div class="avatar" id="header-avatar">DU</div><div style="text-align:right"><div id="header-user" class="small muted">Demo</div><div id="header-role" class="small muted">Role: -</div></div></div></div>
+  </div>
+
+  <div class="container grid">
+    <aside>
+      <nav>
+        <a class="nav-item active" data-target="dashboard" href="dashboard.html">🏠 Dashboard</a>
+        <a class="nav-item" data-target="inventory" href="inventory.html">📦 Inventory</a>
+        <a class="nav-item" data-target="forecast" href="forecast.html">📈 Forecast</a>
+        <a class="nav-item" data-target="usage" href="usage.html">📝 Usage</a>
+        <a class="nav-item" data-target="profile" href="profile.html">👤 Profile</a>
+        <a class="nav-item" data-target="settings" href="settings.html">⚙️ Settings</a>
+      </nav>
+      <div style="margin-top:12px" class="small muted">Quick actions</div>
+    </aside>
+    <main>
+      <div class="card">
+        <h2>Dashboard</h2>
+        <div class="stat-grid" style="margin-top:12px">
+          <div class="stat"><div class="small muted">Total items</div><div id="stat-total" class="larger">0</div></div>
+          <div class="stat"><div class="small muted">Low stock</div><div id="stat-low" class="larger">0</div></div>
+          <div class="stat"><div class="small muted">Expiring soon</div><div id="stat-expired" class="larger">0</div></div>
+        
+        </div>
+
+        <!-- Notifications -->
+        <section style="margin-top:16px">
+          <h3>Notifications</h3>
+          <div id="notifications" class="card small muted">
+            <ul id="notifications-list" style="margin:0;padding-left:18px">
+              <li>Loading notifications...</li>
+            </ul>
+          </div>
+        </section>
+
+          <h3>Permissions</h3>
+          <div id="perm-note" class="small muted">Role-based actions will appear on Inventory & Usage pages.</div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'kitchen_inventory_v1_mp_improved';
+  function getState(){ try{ const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : { user: null, items: [] }; }catch(e){ return { user:null, items: [] }; } }
+
+  const state = getState();
+  document.getElementById('header-user').textContent = state.user?.name || 'Guest';
+  document.getElementById('header-role').textContent = 'Role: ' + (state.user?.role || 'admin');
+  const total = (state.items || []).length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-low').textContent = (state.items || []).filter(i=>Number(i.qty)<=3).length;
+  document.getElementById('stat-expired').textContent = (state.items || []).filter(i=> i.expiry && new Date(i.expiry) <= (new Date(Date.now()+7*24*60*60*1000))).length;
+})();
+
+  // populate notifications: low stock and expiring soon
+  (function populateNotifications(){
+    const listEl = document.getElementById('notifications-list');
+    if(!listEl) return;
+    const items = state.items || [];
+    const low = items.filter(i => Number(i.qty) <= 3);
+    const expiring = items.filter(i => i.expiry && (new Date(i.expiry) <= (new Date(Date.now() + 7*24*60*60*1000))));
+    const notes = [];
+    low.forEach(it => notes.push(`${it.name} is low (Qty: ${it.qty})`));
+    expiring.forEach(it => notes.push(`${it.name} expires on ${it.expiry}`));
+    if(notes.length === 0){
+      listEl.innerHTML = '<li>No notifications — all good.</li>';
+    } else {
+      listEl.innerHTML = notes.map(n => `<li>${n}</li>`).join('');
+    }
+  })();
+
+</script>
+</body></html>

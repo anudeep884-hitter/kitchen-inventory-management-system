@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Usage — Kitchen Inventory</title><link rel="stylesheet" href="styles.css"></head><body data-page="usage">
+  <div class="header">
+    <div class="brand"><div class="logo">KI</div><div><h1>Kitchen Inventory</h1><div class="small muted">Usage logs</div></div></div>
+    <div class="controls"><div class="search-bar" style="width:420px;"><input class="input" id="global-search" placeholder="Search items"></div><div class="profile-row" style="gap:8px;margin-left:12px"><div class="avatar" id="header-avatar">DU</div><div class="small muted" id="header-user">Demo</div></div></div>
+  </div>
+  <div class="container grid">
+    <aside>
+      <nav>
+        <a class="nav-item" data-target="dashboard" href="dashboard.html">🏠 Dashboard</a>
+        <a class="nav-item" data-target="inventory" href="inventory.html">📦 Inventory</a>
+        <a class="nav-item" data-target="forecast" href="forecast.html">📈 Forecast</a>
+        <a class="nav-item active" data-target="usage" href="usage.html">📝 Usage</a>
+        <a class="nav-item" data-target="profile" href="profile.html">👤 Profile</a>
+        <a class="nav-item" data-target="settings" href="settings.html">⚙️ Settings</a>
+      </nav>
+      <hr style="margin:12px 0"/>
+      <div id="chef-actions" style="display:none">
+        <button id="btn-log-usage" class="btn" style="width:100%">Log usage (Chef)</button>
+      </div>
+    </aside>
+    <main>
+      <div class="card">
+        <h2>Usage Logs</h2>
+        <div class="table-wrap" style="margin-top:12px">
+          <table><thead><tr><th>Item</th><th>Date</th><th>Qty used</th></tr></thead><tbody id="usage-body"></tbody></table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'kitchen_inventory_v1_mp_improved';
+  function getState(){ try{ const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : { user: null, items: [] }; }catch(e){ return { user:null, items: [] }; } }
+  function saveState(st){ localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); }
+
+  const state = getState();
+  document.getElementById('header-user').textContent = state.user?.name || 'Guest';
+  const role = state.user?.role || 'admin';
+  if(role === 'chef' || role === 'admin'){
+    document.getElementById('chef-actions').style.display = 'block';
+  }
+
+  const tbody = document.getElementById('usage-body');
+  function renderLogs(){
+    tbody.innerHTML = '';
+    const logs = [];
+    (state.items || []).forEach(it=> (it.usageLog||[]).forEach(l=> logs.push({name: it.name, date: l.date, qty: l.qty})));
+    logs.sort((a,b)=> new Date(b.date)-new Date(a.date));
+    logs.forEach(log=> tbody.innerHTML += `<tr><td>${log.name}</td><td>${log.date}</td><td>${log.qty}</td></tr>`);
+  }
+
+  // chef can log usage
+  document.getElementById('btn-log-usage')?.addEventListener('click', ()=>{
+    const item = prompt('Item name to log usage for:');
+    if(!item) return;
+    const qty = prompt('Quantity used:', '1');
+    if(qty===null) return;
+    const q = parseFloat(qty);
+    if(isNaN(q) || q<=0) return alert('Invalid qty');
+    const it = state.items.find(x=> x.name.toLowerCase() === item.toLowerCase());
+    if(!it) return alert('Item not found');
+    it.qty = Number((it.qty - q).toFixed(3));
+    const date = new Date().toISOString().slice(0,10);
+    it.usageLog = it.usageLog||[];
+    it.usageLog.push({date: date, qty: q});
+    saveState(state);
+    renderLogs();
+  });
+
+  renderLogs();
+})();
+</script>
+</body></html>

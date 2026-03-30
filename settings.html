@@ -1,0 +1,148 @@
+
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Settings — Kitchen Inventory</title><link rel="stylesheet" href="styles.css"></head>
+<body data-page="settings">
+  <div class="header">
+    <div class="brand"><div class="logo">KI</div><div><h1>Kitchen Inventory</h1><div class="small muted">Settings</div></div></div>
+    <div class="controls"><div class="search-bar" style="width:420px;"><input class="input" id="global-search" placeholder="Search items"></div><div class="profile-row" style="gap:8px;margin-left:12px"><div class="avatar" id="header-avatar">DU</div><div class="small muted" id="header-user">Demo</div></div></div>
+  </div>
+
+  <div class="container grid">
+    <aside>
+      <nav>
+        <a class="nav-item" data-target="dashboard" href="dashboard.html">🏠 Dashboard</a>
+        <a class="nav-item" data-target="inventory" href="inventory.html">📦 Inventory</a>
+        <a class="nav-item" data-target="forecast" href="forecast.html">📈 Forecast</a>
+        <a class="nav-item" data-target="usage" href="usage.html">📝 Usage</a>
+        <a class="nav-item" data-target="profile" href="profile.html">👤 Profile</a>
+        <a class="nav-item active" data-target="settings" href="settings.html">⚙️ Settings</a>
+      </nav>
+      <div style="margin-top:12px" class="small muted">Account & app settings</div>
+    </aside>
+
+    <main>
+      <div class="card">
+        
+        <h2>Account</h2>
+        <div style="margin-top:12px;max-width:480px">
+          <label class="small">Name</label>
+          <input id="setting-name" class="input" placeholder="Your name" />
+
+          <div style="margin-top:12px">
+            <label class="small">Email (readonly)</label>
+            <input id="setting-email" class="input" readonly />
+          </div>
+
+          <div style="margin-top:12px">
+            <label class="small">New Password (optional)</label>
+            <input id="setting-password" class="input" type="password" placeholder="Enter new password" />
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+            <button id="btn-save-account" class="btn">Save</button>
+            <button id="btn-logout" class="btn-ghost">Logout</button>
+          </div>
+        </div>
+
+        <h3>App settings</h3>
+        <div style="margin-top:12px">
+          <label class="small">Notifications</label>
+          <div><label><input type="checkbox" id="setting-notifications" /> Enable notifications (dashboard alerts)</label></div>
+
+          <div style="margin-top:12px">
+            <label class="small">Items per page</label>
+            <select id="setting-items-per-page" class="input">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="30">30</option>
+            </select>
+          </div>
+
+          <div style="margin-top:12px">
+            <label class="small">Theme</label>
+            <select id="setting-theme" class="input">
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+            <button id="btn-save-settings" class="btn">Save settings</button>
+            <button id="btn-reset-data" class="btn-ghost">Reset demo data</button>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+<script type="module">
+import('./shared.js').then(mod=>{
+  mod.ensureData();
+  const st = mod.state;
+  mod.activateNav();
+  const user = st.user || {};
+  document.getElementById('header-user').textContent = user.name || 'Demo';
+
+  // populate account fields
+  document.getElementById('setting-name').value = user.name || '';
+  document.getElementById('setting-email').value = user.email || '';
+  document.getElementById('setting-phone').value = user.phone || '';
+  document.getElementById('setting-location').value = user.location || '';
+
+  // populate app settings
+  const s = st.settings || { notifications: true, itemsPerPage: 20, theme: 'light' };
+  document.getElementById('setting-notifications').checked = !!s.notifications;
+  document.getElementById('setting-items-per-page').value = String(s.itemsPerPage || 20);
+  document.getElementById('setting-theme').value = s.theme || 'light';
+
+  // save account changes
+  document.getElementById('btn-save-account').addEventListener('click', ()=>{
+    const name = document.getElementById('setting-name').value.trim();
+    const phone = document.getElementById('setting-phone').value.trim();
+    const location = document.getElementById('setting-location').value.trim();
+    const password = document.getElementById('setting-password').value;
+
+    st.user = st.user || {};
+    st.user.name = name || st.user.name || '';
+    // email is read-only
+    if(phone) st.user.phone = phone;
+    if(location) st.user.location = location;
+    if(password) st.user.password = password; // demo-only local password storage
+    mod.saveState();
+    alert('Account updated (saved locally).');
+    // clear password input after save
+    document.getElementById('setting-password').value = '';
+    document.getElementById('header-user').textContent = st.user.name || '';
+  });
+
+  // logout: clear current user and redirect to login
+  document.getElementById('btn-logout').addEventListener('click', ()=>{
+    if(!confirm('Logout? This will clear the current signed-in user from localStorage.')) return;
+    const data = st;
+    data.user = null;
+    mod.saveState();
+    window.location = 'index.html';
+  });
+
+  // app settings save
+  document.getElementById('btn-save-settings').addEventListener('click', ()=>{
+    st.settings = {
+      notifications: document.getElementById('setting-notifications').checked,
+      itemsPerPage: parseInt(document.getElementById('setting-items-per-page').value,10),
+      theme: document.getElementById('setting-theme').value
+    };
+    mod.saveState();
+    alert('Settings saved.');
+  });
+
+  document.getElementById('btn-reset-data').addEventListener('click', ()=>{
+    if(confirm('Reset demo data? This clears localStorage.')){
+      localStorage.removeItem("kitchen_inventory_v1_mp_improved");
+      mod.seedDemo && mod.seedDemo();
+      alert('Reset done. Reload the page.');
+    }
+  });
+});
+</script>
+</body></html>

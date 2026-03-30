@@ -1,0 +1,1114 @@
+/* shared.js - expanded inventory, demo users, settings */
+const STORAGE_KEY = 'kitchen_inventory_v1_mp_improved';
+let state = { user:null, items: [], lastDeleted: null, settings: { notifications: true, itemsPerPage: 30, theme: 'light' } };
+
+const qs=(s,root=document)=>root.querySelector(s);
+const qsa=(s,root=document)=>Array.from(root.querySelectorAll(s));
+const uid = ()=>Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function loadState(){ const s = localStorage.getItem(STORAGE_KEY); if(s) state = JSON.parse(s); }
+function seedDemo(){
+  state.user = {"name": "Alice Admin", "email": "admin@example.com", "role": "admin", "phone": "+91 90001 00001", "location": "Mumbai, India", "timezone": "Asia/Kolkata", "bio": "Administrator - oversees inventory and users.", "joined": "2024-02-15"};
+  state.lastDeleted = null; state.settings = { notifications: true, itemsPerPage: 30, theme: 'light' };
+  state.items = 
+[
+  {
+    "id": "74810820ef6a",
+    "name": "Tomatoes",
+    "qty": 3,
+    "unit": "pcs",
+    "category": "Vegetable",
+    "expiry": "2025-11-25",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/tomatoes.svg"
+  },
+  {
+    "id": "7ad2b86ceeff",
+    "name": "Basmati Rice",
+    "qty": 14,
+    "unit": "kg",
+    "category": "Grain",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/basmati-rice.svg"
+  },
+  {
+    "id": "b2b7a2132c70",
+    "name": "Whole Milk",
+    "qty": 6,
+    "unit": "L",
+    "category": "Dairy",
+    "expiry": "2025-11-26",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/whole-milk.svg"
+  },
+  {
+    "id": "9890f0697613",
+    "name": "Eggs",
+    "qty": 9,
+    "unit": "pcs",
+    "category": "Dairy",
+    "expiry": "2025-12-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/eggs.svg"
+  },
+  {
+    "id": "b35a8b3d2f27",
+    "name": "Olive Oil",
+    "qty": 8,
+    "unit": "L",
+    "category": "Cooking",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/olive-oil.svg"
+  },
+  {
+    "id": "45f77393b7c0",
+    "name": "All-purpose Flour",
+    "qty": 18,
+    "unit": "kg",
+    "category": "Baking",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/all-purpose-flour.svg"
+  },
+  {
+    "id": "f0dc7a91ef79",
+    "name": "Sugar",
+    "qty": 18,
+    "unit": "kg",
+    "category": "Baking",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/sugar.svg"
+  },
+  {
+    "id": "158cd2088729",
+    "name": "Black Pepper",
+    "qty": 20,
+    "unit": "g",
+    "category": "Spice",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/black-pepper.svg"
+  },
+  {
+    "id": "f038d0514947",
+    "name": "Greek Yogurt",
+    "qty": 4,
+    "unit": "kg",
+    "category": "Dairy",
+    "expiry": "2025-11-22",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/greek-yogurt.svg"
+  },
+  {
+    "id": "e5961b0baa36",
+    "name": "Butter",
+    "qty": 14,
+    "unit": "g",
+    "category": "Dairy",
+    "expiry": "2025-12-05",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/butter.svg"
+  },
+  {
+    "id": "08694ecdb59f",
+    "name": "Cheddar Cheese",
+    "qty": 8,
+    "unit": "g",
+    "category": "Dairy",
+    "expiry": "2025-12-10",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/cheddar-cheese.svg"
+  },
+  {
+    "id": "d4b55964c134",
+    "name": "Chicken Breast",
+    "qty": 19,
+    "unit": "kg",
+    "category": "Meat",
+    "expiry": "2025-11-24",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/chicken-breast.svg"
+  },
+  {
+    "id": "db98bae1ec7a",
+    "name": "Salmon Fillet",
+    "qty": 20,
+    "unit": "kg",
+    "category": "Seafood",
+    "expiry": "2025-11-23",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/salmon-fillet.svg"
+  },
+  {
+    "id": "89093574ad9e",
+    "name": "Lemons",
+    "qty": 3,
+    "unit": "pcs",
+    "category": "Fruit",
+    "expiry": "2025-11-20",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/lemons.svg"
+  },
+  {
+    "id": "7810b2e1f1eb",
+    "name": "Onions",
+    "qty": 7,
+    "unit": "kg",
+    "category": "Vegetable",
+    "expiry": "2025-12-02",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/onions.svg"
+  },
+  {
+    "id": "26f556ab266d",
+    "name": "Garlic",
+    "qty": 15,
+    "unit": "kg",
+    "category": "Vegetable",
+    "expiry": "2026-01-15",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/garlic.svg"
+  },
+  {
+    "id": "b1bebff6bb94",
+    "name": "Potatoes",
+    "qty": 15,
+    "unit": "kg",
+    "category": "Vegetable",
+    "expiry": "2026-01-10",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/potatoes.svg"
+  },
+  {
+    "id": "4a112dd0513c",
+    "name": "Spinach",
+    "qty": 1,
+    "unit": "kg",
+    "category": "Vegetable",
+    "expiry": "2025-11-21",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/spinach.svg"
+  },
+  {
+    "id": "fd28b83c3c8c",
+    "name": "Green Beans",
+    "qty": 17,
+    "unit": "kg",
+    "category": "Vegetable",
+    "expiry": "2025-11-28",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/green-beans.svg"
+  },
+  {
+    "id": "3d37769dc7e9",
+    "name": "Tomato Sauce",
+    "qty": 7,
+    "unit": "jar",
+    "category": "Pantry",
+    "expiry": "2026-05-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/tomato-sauce.svg"
+  },
+  {
+    "id": "c46e8e21b6b8",
+    "name": "Soy Sauce",
+    "qty": 17,
+    "unit": "L",
+    "category": "Pantry",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/soy-sauce.svg"
+  },
+  {
+    "id": "8dc0611245a8",
+    "name": "Honey",
+    "qty": 6,
+    "unit": "jar",
+    "category": "Pantry",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/honey.svg"
+  },
+  {
+    "id": "7cc9d30bfa5b",
+    "name": "Vinegar",
+    "qty": 18,
+    "unit": "L",
+    "category": "Pantry",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/vinegar.svg"
+  },
+  {
+    "id": "fb4c74d473f8",
+    "name": "Cinnamon",
+    "qty": 6,
+    "unit": "g",
+    "category": "Spice",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/cinnamon.svg"
+  },
+  {
+    "id": "66d00ac256c2",
+    "name": "Cocoa Powder",
+    "qty": 15,
+    "unit": "g",
+    "category": "Baking",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/cocoa-powder.svg"
+  },
+  {
+    "id": "95f8c2da33b8",
+    "name": "Mango",
+    "qty": 10,
+    "unit": "kg",
+    "category": "Pantry",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/mango.svg"
+  },
+  {
+    "id": "9f6290f4436e",
+    "name": "Apple",
+    "qty": 10,
+    "unit": "g",
+    "category": "Pantry",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/apple.svg"
+  },
+  {
+    "id": "1be777668cf1",
+    "name": "Pears",
+    "qty": 3,
+    "unit": "L",
+    "category": "Pantry",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/pears.svg"
+  },
+  {
+    "id": "17bced9c55dd",
+    "name": "Zucchini",
+    "qty": 7,
+    "unit": "g",
+    "category": "Spice",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/zucchini.svg"
+  },
+  {
+    "id": "0a32c69e4a33",
+    "name": "Broccoli",
+    "qty": 3,
+    "unit": "L",
+    "category": "Spice",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/broccoli.svg"
+  },
+  {
+    "id": "431ff22259fb",
+    "name": "Carrots",
+    "qty": 6,
+    "unit": "kg",
+    "category": "Vegetable",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/carrots.svg"
+  },
+  {
+    "id": "b98cf1a91565",
+    "name": "Beef Mince",
+    "qty": 11,
+    "unit": "L",
+    "category": "Seafood",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/beef-mince.svg"
+  },
+  {
+    "id": "4f8ba28f173e",
+    "name": "Prawns",
+    "qty": 16,
+    "unit": "L",
+    "category": "Fruit",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/prawns.svg"
+  },
+  {
+    "id": "0f691b9ce743",
+    "name": "Tofu",
+    "qty": 6,
+    "unit": "L",
+    "category": "Pantry",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/tofu.svg"
+  },
+  {
+    "id": "d52eaeeddfdb",
+    "name": "Milk Powder",
+    "qty": 1,
+    "unit": "jar",
+    "category": "Baking",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/milk-powder.svg"
+  },
+  {
+    "id": "735ff07ee868",
+    "name": "Almonds",
+    "qty": 7,
+    "unit": "kg",
+    "category": "Dairy",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/almonds.svg"
+  },
+  {
+    "id": "cb92ea28a5e3",
+    "name": "Walnuts",
+    "qty": 15,
+    "unit": "pcs",
+    "category": "Condiment",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/walnuts.svg"
+  },
+  {
+    "id": "90597c240015",
+    "name": "Peanut Butter",
+    "qty": 15,
+    "unit": "pcs",
+    "category": "Pantry",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/peanut-butter.svg"
+  },
+  {
+    "id": "0ee73a9b0c4b",
+    "name": "Maple Syrup",
+    "qty": 14,
+    "unit": "pcs",
+    "category": "Baking",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/maple-syrup.svg"
+  },
+  {
+    "id": "161db110d08a",
+    "name": "Oats",
+    "qty": 3,
+    "unit": "g",
+    "category": "Baking",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/oats.svg"
+  },
+  {
+    "id": "3e1488b08b8d",
+    "name": "Corn Flour",
+    "qty": 19,
+    "unit": "pcs",
+    "category": "Fruit",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/corn-flour.svg"
+  },
+  {
+    "id": "c89f71156fb3",
+    "name": "Berries",
+    "qty": 7,
+    "unit": "pcs",
+    "category": "Seafood",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/berries.svg"
+  },
+  {
+    "id": "97a89830e890",
+    "name": "Strawberries",
+    "qty": 18,
+    "unit": "g",
+    "category": "Seafood",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/strawberries.svg"
+  },
+  {
+    "id": "288e6d725fd3",
+    "name": "Blueberries",
+    "qty": 17,
+    "unit": "jar",
+    "category": "Meat",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/blueberries.svg"
+  },
+  {
+    "id": "ea2abbed108d",
+    "name": "Coconut Milk",
+    "qty": 15,
+    "unit": "kg",
+    "category": "Condiment",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/coconut-milk.svg"
+  },
+  {
+    "id": "cd1654ab2cad",
+    "name": "Cream Cheese",
+    "qty": 16,
+    "unit": "pcs",
+    "category": "Condiment",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/cream-cheese.svg"
+  },
+  {
+    "id": "bf9cee6ef204",
+    "name": "Sausages",
+    "qty": 10,
+    "unit": "kg",
+    "category": "Fruit",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/sausages.svg"
+  },
+  {
+    "id": "565836562460",
+    "name": "Bacon",
+    "qty": 9,
+    "unit": "pcs",
+    "category": "Condiment",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/bacon.svg"
+  },
+  {
+    "id": "c9b0ab989ec1",
+    "name": "Instant Noodles",
+    "qty": 13,
+    "unit": "kg",
+    "category": "Condiment",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/instant-noodles.svg"
+  },
+  {
+    "id": "24c60f771fec",
+    "name": "Ketchup",
+    "qty": 8,
+    "unit": "jar",
+    "category": "Spice",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/ketchup.svg"
+  },
+  {
+    "id": "0c6ea1ba4398",
+    "name": "Mustard",
+    "qty": 7,
+    "unit": "L",
+    "category": "Meat",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/mustard.svg"
+  },
+  {
+    "id": "d3f1c245c6a1",
+    "name": "Mayonnaise",
+    "qty": 3,
+    "unit": "L",
+    "category": "Dairy",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/mayonnaise.svg"
+  },
+  {
+    "id": "911cc662e344",
+    "name": "Brown Sugar",
+    "qty": 16,
+    "unit": "L",
+    "category": "Vegetable",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/brown-sugar.svg"
+  },
+  {
+    "id": "c9c26c852864",
+    "name": "Molasses",
+    "qty": 15,
+    "unit": "L",
+    "category": "Fruit",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/molasses.svg"
+  },
+  {
+    "id": "389f5b1f25c0",
+    "name": "Green Tea",
+    "qty": 3,
+    "unit": "kg",
+    "category": "Meat",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/green-tea.svg"
+  },
+  {
+    "id": "8ad0a606e01a",
+    "name": "Black Tea",
+    "qty": 16,
+    "unit": "g",
+    "category": "Dairy",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/black-tea.svg"
+  },
+  {
+    "id": "6fda5d0f55b5",
+    "name": "Coffee Beans",
+    "qty": 17,
+    "unit": "jar",
+    "category": "Spice",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/coffee-beans.svg"
+  },
+  {
+    "id": "4830b9cf8580",
+    "name": "Ground Coffee",
+    "qty": 15,
+    "unit": "jar",
+    "category": "Condiment",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/ground-coffee.svg"
+  },
+  {
+    "id": "e09813f80153",
+    "name": "Pasta",
+    "qty": 19,
+    "unit": "jar",
+    "category": "Seafood",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/pasta.svg"
+  },
+  {
+    "id": "1c1ad4ae57a5",
+    "name": "Spaghetti",
+    "qty": 6,
+    "unit": "jar",
+    "category": "Dairy",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/spaghetti.svg"
+  },
+  {
+    "id": "90120b8b4d8a",
+    "name": "Macaroni",
+    "qty": 4,
+    "unit": "pcs",
+    "category": "Pantry",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/macaroni.svg"
+  },
+  {
+    "id": "261eeaa519b9",
+    "name": "Lentils",
+    "qty": 16,
+    "unit": "jar",
+    "category": "Pantry",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/lentils.svg"
+  },
+  {
+    "id": "6ea85ff1f0d7",
+    "name": "Chickpeas",
+    "qty": 1,
+    "unit": "jar",
+    "category": "Meat",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/chickpeas.svg"
+  },
+  {
+    "id": "012540ce0412",
+    "name": "Kidney Beans",
+    "qty": 10,
+    "unit": "pcs",
+    "category": "Meat",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/kidney-beans.svg"
+  },
+  {
+    "id": "5043d16ffd50",
+    "name": "Red Chili Powder",
+    "qty": 15,
+    "unit": "L",
+    "category": "Vegetable",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/red-chili-powder.svg"
+  },
+  {
+    "id": "80be4f5f1cd4",
+    "name": "Turmeric Powder",
+    "qty": 6,
+    "unit": "g",
+    "category": "Dairy",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/turmeric-powder.svg"
+  },
+  {
+    "id": "ae2e94d24a4d",
+    "name": "Baking Powder",
+    "qty": 8,
+    "unit": "jar",
+    "category": "Spice",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/baking-powder.svg"
+  },
+  {
+    "id": "038b48347179",
+    "name": "Yeast",
+    "qty": 9,
+    "unit": "L",
+    "category": "Seafood",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/yeast.svg"
+  },
+  {
+    "id": "a589b74a66df",
+    "name": "Gelatin",
+    "qty": 20,
+    "unit": "jar",
+    "category": "Seafood",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/gelatin.svg"
+  },
+  {
+    "id": "7de0fbb79ebf",
+    "name": "Vanilla Extract",
+    "qty": 6,
+    "unit": "g",
+    "category": "Baking",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/vanilla-extract.svg"
+  },
+  {
+    "id": "327aef169a26",
+    "name": "Bay Leaves",
+    "qty": 15,
+    "unit": "kg",
+    "category": "Dairy",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/bay-leaves.svg"
+  },
+  {
+    "id": "3d57198addd1",
+    "name": "Cardamom",
+    "qty": 16,
+    "unit": "L",
+    "category": "Dairy",
+    "expiry": "2026-02-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/cardamom.svg"
+  },
+  {
+    "id": "6abb0d466994",
+    "name": "Cloves",
+    "qty": 19,
+    "unit": "g",
+    "category": "Spice",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/cloves.svg"
+  },
+  {
+    "id": "5b5ea2ebaf97",
+    "name": "Nutmeg",
+    "qty": 2,
+    "unit": "L",
+    "category": "Fruit",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/nutmeg.svg"
+  },
+  {
+    "id": "a645e89d6d0a",
+    "name": "Saffron",
+    "qty": 2,
+    "unit": "jar",
+    "category": "Meat",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/saffron.svg"
+  },
+  {
+    "id": "4366ea070f02",
+    "name": "Dried Herbs",
+    "qty": 19,
+    "unit": "g",
+    "category": "Seafood",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/dried-herbs.svg"
+  },
+  {
+    "id": "cf1f9a4c3d12",
+    "name": "Tomatoes Small",
+    "qty": 20,
+    "unit": "pcs",
+    "category": "Vegetable",
+    "expiry": "2025-11-25",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/tomatoes-small.svg"
+  },
+  {
+    "id": "95ae67f124a4",
+    "name": "Basmati Rice Large",
+    "qty": 17,
+    "unit": "kg",
+    "category": "Grain",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/basmati-rice-large.svg"
+  },
+  {
+    "id": "a4c3f34594a6",
+    "name": "Whole Milk Organic",
+    "qty": 3,
+    "unit": "L",
+    "category": "Dairy",
+    "expiry": "2025-11-26",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/whole-milk-organic.svg"
+  },
+  {
+    "id": "ab9d0f7e81c8",
+    "name": "Eggs Premium",
+    "qty": 6,
+    "unit": "pcs",
+    "category": "Dairy",
+    "expiry": "2025-12-01",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/eggs-premium.svg"
+  },
+  {
+    "id": "c8fb827854b4",
+    "name": "Pumpkin Puree",
+    "qty": 6.03,
+    "unit": "can",
+    "category": "Pantry",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/pumpkin-puree.svg"
+  },
+  {
+    "id": "46f652f33dc9",
+    "name": "Sourdough Starter",
+    "qty": 9.71,
+    "unit": "jar",
+    "category": "Baking",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/sourdough-starter.svg"
+  },
+  {
+    "id": "8914e24030b7",
+    "name": "Quinoa",
+    "qty": 19.62,
+    "unit": "kg",
+    "category": "Grain",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/quinoa.svg"
+  },
+  {
+    "id": "753f13405164",
+    "name": "Edamame",
+    "qty": 12.6,
+    "unit": "bag",
+    "category": "Frozen",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/edamame.svg"
+  },
+  {
+    "id": "9ecbd760ca7a",
+    "name": "Ricotta Cheese",
+    "qty": 6.66,
+    "unit": "g",
+    "category": "Dairy",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/ricotta-cheese.svg"
+  },
+  {
+    "id": "199ab655d8ef",
+    "name": "Garam Masala",
+    "qty": 14.71,
+    "unit": "g",
+    "category": "Spice",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/garam-masala.svg"
+  },
+  {
+    "id": "f6dda1e14218",
+    "name": "Star Anise",
+    "qty": 3.09,
+    "unit": "g",
+    "category": "Spice",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/star-anise.svg"
+  },
+  {
+    "id": "89564ee2d67a",
+    "name": "Agave Nectar",
+    "qty": 12.0,
+    "unit": "bottle",
+    "category": "Condiment",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/agave-nectar.svg"
+  },
+  {
+    "id": "955613da3042",
+    "name": "Quark",
+    "qty": 8.27,
+    "unit": "g",
+    "category": "Dairy",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/quark.svg"
+  },
+  {
+    "id": "2e17f49a6076",
+    "name": "Polenta",
+    "qty": 4.98,
+    "unit": "kg",
+    "category": "Grain",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/polenta.svg"
+  },
+  {
+    "id": "81f28f7930f7",
+    "name": "Rye Flour",
+    "qty": 11.13,
+    "unit": "kg",
+    "category": "Baking",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/rye-flour.svg"
+  },
+  {
+    "id": "49899f158d7a",
+    "name": "Miso Paste",
+    "qty": 6.17,
+    "unit": "jar",
+    "category": "Pantry",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/miso-paste.svg"
+  },
+  {
+    "id": "4f3bb1590cef",
+    "name": "Tahini",
+    "qty": 15.54,
+    "unit": "jar",
+    "category": "Pantry",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/tahini.svg"
+  },
+  {
+    "id": "aa5ecd06d16d",
+    "name": "Soba Noodles",
+    "qty": 19.27,
+    "unit": "pack",
+    "category": "Pantry",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/soba-noodles.svg"
+  },
+  {
+    "id": "ebed6269d743",
+    "name": "Wasabi Paste",
+    "qty": 19.62,
+    "unit": "tube",
+    "category": "Condiment",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/wasabi-paste.svg"
+  },
+  {
+    "id": "5c9d74647349",
+    "name": "Pickled Ginger",
+    "qty": 2.52,
+    "unit": "jar",
+    "category": "Condiment",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/pickled-ginger.svg"
+  },
+  {
+    "id": "2de6672d92be",
+    "name": "Saffron Threads",
+    "qty": 13.19,
+    "unit": "g",
+    "category": "Spice",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/saffron-threads.svg"
+  },
+  {
+    "id": "f3d97513d7cc",
+    "name": "Crushed Tomatoes",
+    "qty": 7.07,
+    "unit": "can",
+    "category": "Pantry",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/crushed-tomatoes.svg"
+  },
+  {
+    "id": "1a6d563762b3",
+    "name": "Beetroot",
+    "qty": 9.72,
+    "unit": "kg",
+    "category": "Vegetable",
+    "expiry": "",
+    "lastUsed": "",
+    "usageLog": [],
+    "icon": "assets/beetroot.svg"
+  }
+]
+;
+  saveState();
+}
+
+function ensureData(){ loadState(); if(!localStorage.getItem(STORAGE_KEY)){ seedDemo(); } }
+function activateNav(){ qsa('.nav-item').forEach(n=>{ const target = n.dataset.target; if(target === document.body.dataset.page) n.classList.add('active'); else n.classList.remove('active'); }); }
+function redirectTo(page){ window.location = page; }
+
+window.Shared = { ensureData, state, saveState, loadState, uid, activateNav, redirectTo, qs, qsa, seedDemo };

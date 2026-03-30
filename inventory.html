@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Inventory — Kitchen Inventory</title><link rel="stylesheet" href="styles.css"></head>
+<body data-page="inventory">
+  <div class="header">
+    <div class="brand"><div class="logo">KI</div><div><h1>Kitchen Inventory</h1><div class="small muted">Manage pantry</div></div></div>
+    <div class="controls"><div class="search-bar" style="width:420px;"><input class="input" id="global-search" placeholder="Search items"></div><div class="profile-row" style="gap:8px;margin-left:12px"><div class="avatar" id="header-avatar">DU</div><div class="small muted" id="header-user">Demo</div></div></div>
+  </div>
+
+  <!-- Grid container: aside (left) + main (right) -->
+  <div class="container grid" style="align-items:start;gap:20px">
+    <aside>
+      <nav>
+        <a class="nav-item" data-target="dashboard" href="dashboard.html">🏠 Dashboard</a>
+        <a class="nav-item active" data-target="inventory" href="inventory.html">📦 Inventory</a>
+        <a class="nav-item" data-target="forecast" href="forecast.html">📈 Forecast</a>
+        <a class="nav-item" data-target="usage" href="usage.html">📝 Usage</a>
+        <a class="nav-item" data-target="profile" href="profile.html">👤 Profile</a>
+        <a class="nav-item" data-target="settings" href="settings.html">⚙️ Settings</a>
+      </nav>
+      <hr style="margin:12px 0"/>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button id="btn-new-item-left" class="btn" style="width:100%">+ New item</button>
+        <button id="btn-add-stock-left" class="btn-ghost" style="width:100%;display:none">+ Add stock</button>
+      </div>
+    </aside>
+
+    <main>
+      <div class="card">
+        <h2>Inventory</h2>
+
+        <!-- Controls (top of table) -->
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input id="search" class="input" placeholder="Search inventory..." style="min-width:220px">
+            <div style="min-width:180px">
+              <select id="filter-category" class="input"><option value="">All categories</option></select>
+            </div>
+            <div style="min-width:180px">
+              <select id="filter-expiry" class="input">
+                <option value="">All expiry</option>
+                <option value="expiring-7">Expiring in 7 days</option>
+                <option value="expired">Expired</option>
+                <option value="no-expiry">No expiry</option>
+              </select>
+            </div>
+            <div style="min-width:180px">
+              <select id="sort-select" class="input">
+                <option value="">Sort (default)</option>
+                <option value="qty-asc">Qty ↑</option>
+                <option value="qty-desc">Qty ↓</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button id="btn-new-item-top" class="btn">+ New item</button>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:12px;overflow:auto">
+          <table style="min-width:820px">
+            <thead><tr><th></th><th>Name</th><th>Qty</th><th>Unit</th><th>Category</th><th>Expiry</th><th>Last Used</th><th>Actions</th></tr></thead>
+            <tbody id="inventory-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal (hidden by default) -->
+  <div id="modal-overlay" class="modal hidden"><div class="modal-card"><h3 id="modal-title">New Item</h3>
+    <label>Name</label><input id="item-name" class="input"/>
+    <label>Quantity</label><input id="item-qty" class="input" type="number"/>
+    <label>Unit</label><input id="item-unit" class="input"/>
+    <label>Category</label><input id="item-category" class="input"/>
+    <label>Expiry</label><input id="item-expiry" class="input" type="date"/>
+    <div class="actions-row"><button id="modal-save" class="btn">Save</button><button id="modal-cancel" class="btn-ghost">Cancel</button></div>
+  </div></div>
+
+
+<script type="module">
+import('./shared.js').then(mod=>{
+  // Ensure data exists. If existing localStorage has very few items, re-seed to show full demo inventory.
+  mod.ensureData();
+  // If state.items is missing or unusually small, run seedDemo to repopulate demo items.
+  try {
+    const count = (mod.state && Array.isArray(mod.state.items)) ? mod.state.items.length : 0;
+    if(count < 30 && typeof mod.seedDemo === 'function'){
+      console.log('Seeding demo data because item count was', count);
+      mod.seedDemo();
+      // reload state after seeding
+      mod.loadState && mod.loadState();
+    }
+  } catch(e){
+    console.warn('Seeding check error', e);
+  }
+
+  const st = mod.state;
+  mod.activateNav();
+  document.getElementById('header-user').textContent = st.user?.name || 'Demo';
+
+  const tbody = document.getElementById('inventory-table-body');
+  const catSelect = document.getElementById('filter-category');
+  const expirySelect = document.getElementById('filter-expiry');
+  const sortSelect = document.getElementById('sort-select');
+  const searchInput = document.getElementById('search');
+  const btnNewTop = document.getElementById('btn-new-item-top');
+  const btnNewLeft = document.getElementById('btn-new-item-left');
+  const btnAddLeft = document.getElementById('btn-add-stock-left');
+
+  function populateCategories(){
+    if(!catSelect) return;
+    const cats = Array.from(new Set((st.items||[]).map(i=>i.category).filter(Boolean))).sort();
+    catSelect.innerHTML = '<option value="">All categories</option>' + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
+
+  function applyFiltersAndSort(items){
+    const q = (searchInput?.value || '').trim().toLowerCase();
+    const cat = catSelect?.value || '';
+    const expiryFilter = expirySelect?.value || '';
+    let filtered = (items || []).filter(it => {
+      if(q && !(it.name || '').toLowerCase().includes(q)) return false;
+      if(cat && it.category !== cat) return false;
+      if(expiryFilter === 'expiring-7'){
+        if(!it.expiry) return false;
+        const exp = new Date(it.expiry); const now = new Date();
+        const limit = new Date(now.getTime() + 7*24*60*60*1000);
+        if(!(exp >= now && exp <= limit)) return false;
+      } else if(expiryFilter === 'expired'){
+        if(!it.expiry) return false;
+        const exp = new Date(it.expiry);
+        if(!(exp < new Date())) return false;
+      } else if(expiryFilter === 'no-expiry'){
+        if(it.expiry) return false;
+      }
+      return true;
+    });
+
+    const sortVal = sortSelect?.value || '';
+    if(sortVal === 'qty-asc'){
+      filtered.sort((a,b)=> Number(a.qty) - Number(b.qty));
+    } else if(sortVal === 'qty-desc'){
+      filtered.sort((a,b)=> Number(b.qty) - Number(a.qty));
+    }
+    return filtered;
+  }
+
+  function render(){
+    const list = applyFiltersAndSort(st.items);
+    tbody.innerHTML = '';
+    list.forEach(it=>{
+      const tr = document.createElement('tr');
+      const icon = it.icon ? ('<img src="'+it.icon+'" alt="'+it.name+'" style="width:40px;height:40px;border-radius:8px;margin-right:8px;vertical-align:middle">') : '';
+      const actions = [];
+      const role = st.user?.role || 'admin';
+      if(role === 'admin' || role === 'chef') actions.push('<button class="btn-ghost btn-use" data-id="'+it.id+'">Use</button>');
+      if(role === 'admin') actions.push('<button class="btn-ghost btn-edit" data-id="'+it.id+'">Edit</button>');
+      if(role === 'admin') actions.push('<button class="btn-ghost btn-del" data-id="'+it.id+'">Del</button>');
+      if(role === 'delivery') actions.push('<button class="btn-ghost btn-add" data-id="'+it.id+'">Add Stock</button>');
+      tr.innerHTML = '<td style="width:64px">'+icon+'</td><td>'+it.name+'</td><td>'+it.qty+'</td><td>'+ (it.unit||'') +'</td><td>'+ (it.category||'') +'</td><td class="small">'+ (it.expiry||'') +'</td><td class="small">'+ (it.lastUsed||'') +'</td><td>'+ actions.join(' ') +'</td>';
+      tbody.appendChild(tr);
+    });
+    attach();
+  }
+
+  function attach(){
+    Array.from(document.querySelectorAll('.btn-use')).forEach(b=>b.addEventListener('click', e=>{
+      const id = e.target.dataset.id;
+      const qty = prompt('How many units to use?', '1'); if(qty===null) return;
+      const q = parseFloat(q); if(isNaN(q) || q<=0) return alert('Invalid qty');
+      const it = st.items.find(x=>x.id===id);
+      it.qty = Number((it.qty - q).toFixed(3)); it.lastUsed = new Date().toISOString().slice(0,10); it.usageLog = it.usageLog||[]; it.usageLog.push({date:it.lastUsed,qty:q}); mod.saveState(); render();
+    })));
+    Array.from(document.querySelectorAll('.btn-add')).forEach(b=>b.addEventListener('click', e=>{
+      const id = e.target.dataset.id; const qty = prompt('How many units to add?', '1'); if(qty===null) return;
+      const q = parseFloat(q); if(isNaN(q) || q<=0) return alert('Invalid qty'); const it = st.items.find(x=>x.id===id); it.qty = Number((it.qty + q).toFixed(3)); mod.saveState(); render();
+    })));
+    Array.from(document.querySelectorAll('.btn-edit')).forEach(b=>b.addEventListener('click', e=>{
+      const id = e.target.dataset.id; const it = st.items.find(x=>x.id===id); const name = prompt('Name', it.name); if(name === null) return; it.name = name; mod.saveState(); render();
+    })));
+    Array.from(document.querySelectorAll('.btn-del')).forEach(b=>b.addEventListener('click', e=>{
+      const id = e.target.dataset.id; if(!confirm('Delete item?')) return; st.items = st.items.filter(x=>x.id!==id); mod.saveState(); render();
+    })));
+  }
+
+  // New item modal handlers
+  const modal = document.getElementById('modal-overlay');
+  const openModal = (data)=> {
+    modal.classList.remove('hidden');
+    document.getElementById('item-name').value = data?.name || '';
+    document.getElementById('item-qty').value = data?.qty || '';
+    document.getElementById('item-unit').value = data?.unit || '';
+    document.getElementById('item-category').value = data?.category || '';
+    document.getElementById('item-expiry').value = data?.expiry || '';
+    document.getElementById('modal-save').dataset.id = data?.id || '';
+  };
+  const closeModal = ()=> { modal.classList.add('hidden'); document.getElementById('modal-save').dataset.id=''; };
+
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+
+  function canAdd(){
+    const role = st.user?.role || 'admin';
+    return role === 'admin' || role === 'delivery';
+  }
+
+  // wire left and top new-item buttons
+  btnNewTop.addEventListener('click', ()=>{ if(!canAdd()){ alert('Only Admin or Delivery partner can add new items.'); return; } openModal(null); });
+  btnNewLeft.addEventListener('click', ()=>{ if(!canAdd()){ alert('Only Admin or Delivery partner can add new items.'); return; } openModal(null); });
+
+  document.getElementById('modal-save').addEventListener('click', ()=>{
+    const id = document.getElementById('modal-save').dataset.id;
+    const obj = {
+      name: document.getElementById('item-name').value.trim(),
+      qty: parseFloat(document.getElementById('item-qty').value) || 0,
+      unit: document.getElementById('item-unit').value.trim(),
+      category: document.getElementById('item-category').value.trim(),
+      expiry: document.getElementById('item-expiry').value || '',
+      lastUsed: ''
+    };
+    if(!obj.name) return alert('Name required');
+    if(id){
+      const it = st.items.find(x=>x.id===id);
+      Object.assign(it, obj);
+    } else {
+      const slug = obj.name.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+      obj.id = (Date.now().toString(36) + Math.random().toString(36).slice(2,6));
+      obj.icon = 'assets/' + slug + '.svg';
+      obj.usageLog = [];
+      st.items.unshift(obj);
+    }
+    mod.saveState();
+    closeModal();
+    populateCategories();
+    render();
+  });
+
+  // wire filters/sort/search to re-render
+  populateCategories();
+  [catSelect, expirySelect, sortSelect, searchInput].forEach(c=>{ if(c) c.addEventListener('change', render); if(c) c.addEventListener('input', render); });
+  // show/hide left add stock button for delivery
+  if(st.user?.role === 'delivery'){ btnAddLeft.style.display = 'block'; btnNewLeft.style.display = 'none'; }
+  render();
+});
+</script>
+
+
+</body></html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login — Kitchen Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body[data-page="login"] .search-bar { display: none; }
+    .login-column { max-width:420px; margin:0 auto; display:flex; flex-direction:column; gap:10px; align-items:stretch; }
+    label.small { font-size:13px; color:var(--muted); margin-bottom:6px; }
+    select.input { appearance: none; -webkit-appearance:none; -moz-appearance:none; }
+  </style>
+</head>
+<body data-page="login">
+  <div class="header">
+    <div class="brand">
+      <div class="logo">KI</div>
+      <div>
+        <h1>Kitchen Inventory</h1>
+        <div class="small muted">Manage pantry, forecast usage, and avoid waste</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="search-bar" style="width:420px;">
+        <input class="input" id="global-search" placeholder="Search items, e.g., 'milk'">
+      </div>
+      <div class="profile-row" style="gap:8px;margin-left:12px">
+        <div class="avatar" id="header-avatar">DU</div>
+        <div class="small muted" id="header-user">Demo</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card" style="max-width:620px;margin:24px auto;text-align:left">
+      <h2 style="text-align:center">Welcome to Kitchen Inventory</h2>
+      <p class="small muted" style="text-align:center">Sign in with any email + password to continue (demo). Choose a role below.</p>
+
+      <div class="login-column" style="margin-top:18px">
+        <div>
+          <label class="small" for="login-email">Email</label>
+          <input id="login-email" class="input" placeholder="you@example.com" type="email" />
+        </div>
+
+        <div>
+          <label class="small" for="login-password">Password</label>
+          <input id="login-password" class="input" placeholder="password (any)" type="password" />
+        </div>
+
+        <div>
+          <label class="small" for="login-role">Role</label>
+          <select id="login-role" class="input">
+            <option value="admin">Admin — full access</option>
+            <option value="chef">Chef — update usage</option>
+            <option value="delivery">Delivery Partner — add stock</option>
+          </select>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:6px">
+          <button id="btn-login" class="btn" style="min-width:160px">Sign in</button>
+          
+        </div>
+
+        <p class="footer-note" style="text-align:center;margin-top:8px">Demo login — any email & password work. Selected role will control available UI actions.</p>
+      </div>
+    </div>
+  </div>
+
+  
+<script>
+(function(){
+  const STORAGE_KEY = 'kitchen_inventory_v1_mp_improved';
+  function getState(){ try{ const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : { user: null, items: [] }; }catch(e){ return { user:null, items: [] }; } }
+  function saveState(state){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+  const demoMap = {
+    'admin@example.com': {"name": "Alice Admin", "email": "admin@example.com", "role": "admin", "phone": "+91 90001 00001", "location": "Mumbai, India", "timezone": "Asia/Kolkata", "bio": "Administrator - oversees inventory and users.", "joined": "2024-02-15"},
+    'chef@example.com': {"name": "Carlos Chef", "email": "chef@example.com", "role": "chef", "phone": "+91 90002 00002", "location": "Kochi, India", "timezone": "Asia/Kolkata", "bio": "Head chef - logs usage and prepares menus.", "joined": "2024-06-20"},
+    'delivery@example.com': {"name": "Dina Delivery", "email": "delivery@example.com", "role": "delivery", "phone": "+91 90003 00003", "location": "Delhi, India", "timezone": "Asia/Kolkata", "bio": "Delivery partner - updates stock on arrival.", "joined": "2024-09-01"}
+  };
+
+  document.getElementById('btn-login').addEventListener('click', ()=>{
+    const email = document.getElementById('login-email').value.trim();
+    const pass = document.getElementById('login-password').value;
+    const role = document.getElementById('login-role').value;
+    if(!email) return alert('Please enter an email (demo login accepts any email).');
+    const st = getState();
+    // if email matches a demo account, use that user's full profile
+    if(demoMap[email]){
+      st.user = demoMap[email];
+    } else {
+      // otherwise use role-based defaults
+      st.user = { name: email.split('@')[0] || email, email: email, role: role, phone: '', location: '', timezone: 'Asia/Kolkata', bio: '' };
+    }
+    saveState(st);
+    window.location = 'dashboard.html';
+  });
+
+  document.getElementById('btn-demo-reset').addEventListener('click', ()=>{
+    if(confirm('Reset demo data? This clears local data.')){
+      localStorage.removeItem(STORAGE_KEY);
+      alert('Demo data cleared. Reload the page to seed demo again.');
+    }
+  });
+
+  document.getElementById('login-password').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') document.getElementById('btn-login').click(); });
+
+})();
+</script>
