@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inventory Audit History — Kitchen Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="history">
+  <header class="header"></header>
+
+  <div class="container grid">
+    <aside></aside>
+
+    <main>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Inventory Audit Trail &amp; Activity Log</h2>
+            <div class="card-subtitle">Complete chronological record of all stock adjustments, usages, intakes, and waste incidents</div>
+          </div>
+          <button id="btn-export-history" class="btn btn-sm">📥 Export Audit CSV</button>
+        </div>
+
+        <!-- Filter Toolbar -->
+        <div style="background:#f8fafc;padding:14px;border-radius:12px;border:1px solid var(--border);margin-bottom:16px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:10px;margin-bottom:10px">
+            <div>
+              <label class="form-label" style="font-size:11px">Search Log</label>
+              <input id="hist-search" class="input" placeholder="Item, user, reason..." />
+            </div>
+
+            <div>
+              <label class="form-label" style="font-size:11px">Operation Type</label>
+              <select id="hist-filter-op" class="input">
+                <option value="">All Operations</option>
+                <option value="USE_STOCK">Stock Used (-)</option>
+                <option value="ADD_STOCK">Stock Added (+)</option>
+                <option value="RESTOCK">Restocked (↻)</option>
+                <option value="MARK_DAMAGED">Damaged / Waste (⚠️)</option>
+                <option value="NEW_ITEM">New Item Created</option>
+                <option value="DELETE_ITEM">Item Deleted</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label" style="font-size:11px">Start Date</label>
+              <input id="hist-start-date" class="input" type="date" />
+            </div>
+
+            <div>
+              <label class="form-label" style="font-size:11px">End Date</label>
+              <input id="hist-end-date" class="input" type="date" />
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <div class="small muted" id="hist-count-label">Showing 0 audit entries</div>
+            <button id="btn-reset-hist-filters" class="btn-ghost btn-sm">Reset Filters</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Item</th>
+                <th>Operation</th>
+                <th>Quantity</th>
+                <th>Stock Change</th>
+                <th>User / Station</th>
+                <th>Reason / Culinary Purpose</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <tr><td colspan="7" class="small muted text-center" style="padding:24px">Loading audit logs...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import {
+      requireAuth,
+      renderAppShell,
+      apiGetTransactions,
+      formatDate,
+      exportToCSV,
+      showToast
+    } from './shared.js';
+
+    const user = requireAuth(['admin', 'chef']);
+    if (!user) { /* redirected */ }
+
+    renderAppShell('history');
+
+    let transactions = [];
+
+    async function loadHistory() {
+      try {
+        const res = await apiGetTransactions();
+        if (res.success) {
+          transactions = res.transactions || [];
+          renderHistoryTable();
+        }
+      } catch (err) {
+        showToast('Error loading history: ' + err.message, 'error');
+      }
+    }
+
+    function renderHistoryTable() {
+      const q = (document.getElementById('hist-search')?.value || '').trim().toLowerCase();
+      const op = document.getElementById('hist-filter-op')?.value;
+      const start = document.getElementById('hist-start-date')?.value;
+      const end = document.getElementById('hist-end-date')?.value;
+
+      const filtered = transactions.filter(t => {
+        if (q && !(t.itemName || '').toLowerCase().includes(q) && !(t.userName || '').toLowerCase().includes(q) && !(t.reason || '').toLowerCase().includes(q)) return false;
+        if (op && t.operation !== op) return false;
+        if (start && t.timestamp < start) return false;
+        if (end && t.timestamp > end + 'T23:59:59.999Z') return false;
+        return true;
+      });
+
+      document.getElementById('hist-count-label').textContent = `Showing ${filtered.length} of ${transactions.length} audit records`;
+
+      const tbody = document.getElementById('history-table-body');
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="small muted text-center" style="padding:24px">No audit records match the filters.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(t => {
+        let opBadge = '<span class="badge badge-safe">Log</span>';
+        let qtyColor = '#0f172a';
+
+        if (t.operation === 'USE_STOCK') {
+          opBadge = '<span class="badge badge-expiring">📤 Used</span>';
+          qtyColor = '#ea580c';
+        } else if (t.operation === 'ADD_STOCK') {
+          opBadge = '<span class="badge badge-available">➕ Added</span>';
+          qtyColor = '#059669';
+        } else if (t.operation === 'RESTOCK') {
+          opBadge = '<span class="badge badge-safe">↻ Restocked</span>';
+          qtyColor = '#2563eb';
+        } else if (t.operation === 'MARK_DAMAGED') {
+          opBadge = '<span class="badge badge-expired">⚠️ Damaged</span>';
+          qtyColor = '#dc2626';
+        } else if (t.operation === 'NEW_ITEM') {
+          opBadge = '<span class="badge badge-safe">✨ New Item</span>';
+        }
+
+        const delta = `${t.previousQty ?? '—'} &rarr; <strong>${t.newQty ?? '—'}</strong> ${t.unit || ''}`;
+
+        return `
+          <tr>
+            <td class="small muted">${formatDate(t.timestamp)}</td>
+            <td style="font-weight:700">${t.itemName}</td>
+            <td>${opBadge}</td>
+            <td style="font-weight:800;color:${qtyColor}">${t.quantity} ${t.unit || ''}</td>
+            <td class="small">${delta}</td>
+            <td>
+              <div style="font-weight:600;font-size:13px">${t.userName || 'Staff'}</div>
+              <div class="small muted">${(t.userRole || 'User').toUpperCase()}</div>
+            </td>
+            <td class="small">${t.reason || '—'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    ['hist-search', 'hist-filter-op', 'hist-start-date', 'hist-end-date'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', renderHistoryTable);
+        el.addEventListener('change', renderHistoryTable);
+      }
+    });
+
+    document.getElementById('btn-reset-hist-filters').addEventListener('click', () => {
+      document.getElementById('hist-search').value = '';
+      document.getElementById('hist-filter-op').value = '';
+      document.getElementById('hist-start-date').value = '';
+      document.getElementById('hist-end-date').value = '';
+      renderHistoryTable();
+    });
+
+    document.getElementById('btn-export-history').addEventListener('click', () => {
+      if (!transactions.length) {
+        showToast('No transaction data to export', 'warning');
+        return;
+      }
+      const exportRows = transactions.map(t => ({
+        'Timestamp': t.timestamp,
+        'Item Name': t.itemName,
+        'Operation': t.operation,
+        'Quantity': `${t.quantity} ${t.unit || ''}`,
+        'Previous Qty': t.previousQty,
+        'New Qty': t.newQty,
+        'User': `${t.userName} (${t.userRole})`,
+        'Reason': t.reason
+      }));
+      exportToCSV('Kitchen_Inventory_Audit_Log', exportRows);
+    });
+
+    loadHistory();
+  </script>
+</body>
+</html>

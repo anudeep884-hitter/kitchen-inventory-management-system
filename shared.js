@@ -1,1114 +1,714 @@
-/* shared.js - expanded inventory, demo users, settings */
-const STORAGE_KEY = 'kitchen_inventory_v1_mp_improved';
-let state = { user:null, items: [], lastDeleted: null, settings: { notifications: true, itemsPerPage: 30, theme: 'light' } };
+/* ===================================================================
+   Kitchen Inventory Management System — Client Shared Module (shared.js)
+   Full API client, role-based navigation, state management, and UI helpers
+   =================================================================== */
 
-const qs=(s,root=document)=>root.querySelector(s);
-const qsa=(s,root=document)=>Array.from(root.querySelectorAll(s));
-const uid = ()=>Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const STORAGE_KEY = 'kitchen_inventory_v2_store';
+const TOKEN_KEY = 'kitchen_inventory_auth_token';
+const USER_KEY = 'kitchen_inventory_auth_user';
 
-function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-function loadState(){ const s = localStorage.getItem(STORAGE_KEY); if(s) state = JSON.parse(s); }
-function seedDemo(){
-  state.user = {"name": "Alice Admin", "email": "admin@example.com", "role": "admin", "phone": "+91 90001 00001", "location": "Mumbai, India", "timezone": "Asia/Kolkata", "bio": "Administrator - oversees inventory and users.", "joined": "2024-02-15"};
-  state.lastDeleted = null; state.settings = { notifications: true, itemsPerPage: 30, theme: 'light' };
-  state.items = 
-[
-  {
-    "id": "74810820ef6a",
-    "name": "Tomatoes",
-    "qty": 3,
-    "unit": "pcs",
-    "category": "Vegetable",
-    "expiry": "2025-11-25",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/tomatoes.svg"
-  },
-  {
-    "id": "7ad2b86ceeff",
-    "name": "Basmati Rice",
-    "qty": 14,
-    "unit": "kg",
-    "category": "Grain",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/basmati-rice.svg"
-  },
-  {
-    "id": "b2b7a2132c70",
-    "name": "Whole Milk",
-    "qty": 6,
-    "unit": "L",
-    "category": "Dairy",
-    "expiry": "2025-11-26",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/whole-milk.svg"
-  },
-  {
-    "id": "9890f0697613",
-    "name": "Eggs",
-    "qty": 9,
-    "unit": "pcs",
-    "category": "Dairy",
-    "expiry": "2025-12-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/eggs.svg"
-  },
-  {
-    "id": "b35a8b3d2f27",
-    "name": "Olive Oil",
-    "qty": 8,
-    "unit": "L",
-    "category": "Cooking",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/olive-oil.svg"
-  },
-  {
-    "id": "45f77393b7c0",
-    "name": "All-purpose Flour",
-    "qty": 18,
-    "unit": "kg",
-    "category": "Baking",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/all-purpose-flour.svg"
-  },
-  {
-    "id": "f0dc7a91ef79",
-    "name": "Sugar",
-    "qty": 18,
-    "unit": "kg",
-    "category": "Baking",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/sugar.svg"
-  },
-  {
-    "id": "158cd2088729",
-    "name": "Black Pepper",
-    "qty": 20,
-    "unit": "g",
-    "category": "Spice",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/black-pepper.svg"
-  },
-  {
-    "id": "f038d0514947",
-    "name": "Greek Yogurt",
-    "qty": 4,
-    "unit": "kg",
-    "category": "Dairy",
-    "expiry": "2025-11-22",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/greek-yogurt.svg"
-  },
-  {
-    "id": "e5961b0baa36",
-    "name": "Butter",
-    "qty": 14,
-    "unit": "g",
-    "category": "Dairy",
-    "expiry": "2025-12-05",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/butter.svg"
-  },
-  {
-    "id": "08694ecdb59f",
-    "name": "Cheddar Cheese",
-    "qty": 8,
-    "unit": "g",
-    "category": "Dairy",
-    "expiry": "2025-12-10",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/cheddar-cheese.svg"
-  },
-  {
-    "id": "d4b55964c134",
-    "name": "Chicken Breast",
-    "qty": 19,
-    "unit": "kg",
-    "category": "Meat",
-    "expiry": "2025-11-24",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/chicken-breast.svg"
-  },
-  {
-    "id": "db98bae1ec7a",
-    "name": "Salmon Fillet",
-    "qty": 20,
-    "unit": "kg",
-    "category": "Seafood",
-    "expiry": "2025-11-23",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/salmon-fillet.svg"
-  },
-  {
-    "id": "89093574ad9e",
-    "name": "Lemons",
-    "qty": 3,
-    "unit": "pcs",
-    "category": "Fruit",
-    "expiry": "2025-11-20",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/lemons.svg"
-  },
-  {
-    "id": "7810b2e1f1eb",
-    "name": "Onions",
-    "qty": 7,
-    "unit": "kg",
-    "category": "Vegetable",
-    "expiry": "2025-12-02",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/onions.svg"
-  },
-  {
-    "id": "26f556ab266d",
-    "name": "Garlic",
-    "qty": 15,
-    "unit": "kg",
-    "category": "Vegetable",
-    "expiry": "2026-01-15",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/garlic.svg"
-  },
-  {
-    "id": "b1bebff6bb94",
-    "name": "Potatoes",
-    "qty": 15,
-    "unit": "kg",
-    "category": "Vegetable",
-    "expiry": "2026-01-10",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/potatoes.svg"
-  },
-  {
-    "id": "4a112dd0513c",
-    "name": "Spinach",
-    "qty": 1,
-    "unit": "kg",
-    "category": "Vegetable",
-    "expiry": "2025-11-21",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/spinach.svg"
-  },
-  {
-    "id": "fd28b83c3c8c",
-    "name": "Green Beans",
-    "qty": 17,
-    "unit": "kg",
-    "category": "Vegetable",
-    "expiry": "2025-11-28",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/green-beans.svg"
-  },
-  {
-    "id": "3d37769dc7e9",
-    "name": "Tomato Sauce",
-    "qty": 7,
-    "unit": "jar",
-    "category": "Pantry",
-    "expiry": "2026-05-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/tomato-sauce.svg"
-  },
-  {
-    "id": "c46e8e21b6b8",
-    "name": "Soy Sauce",
-    "qty": 17,
-    "unit": "L",
-    "category": "Pantry",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/soy-sauce.svg"
-  },
-  {
-    "id": "8dc0611245a8",
-    "name": "Honey",
-    "qty": 6,
-    "unit": "jar",
-    "category": "Pantry",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/honey.svg"
-  },
-  {
-    "id": "7cc9d30bfa5b",
-    "name": "Vinegar",
-    "qty": 18,
-    "unit": "L",
-    "category": "Pantry",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/vinegar.svg"
-  },
-  {
-    "id": "fb4c74d473f8",
-    "name": "Cinnamon",
-    "qty": 6,
-    "unit": "g",
-    "category": "Spice",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/cinnamon.svg"
-  },
-  {
-    "id": "66d00ac256c2",
-    "name": "Cocoa Powder",
-    "qty": 15,
-    "unit": "g",
-    "category": "Baking",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/cocoa-powder.svg"
-  },
-  {
-    "id": "95f8c2da33b8",
-    "name": "Mango",
-    "qty": 10,
-    "unit": "kg",
-    "category": "Pantry",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/mango.svg"
-  },
-  {
-    "id": "9f6290f4436e",
-    "name": "Apple",
-    "qty": 10,
-    "unit": "g",
-    "category": "Pantry",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/apple.svg"
-  },
-  {
-    "id": "1be777668cf1",
-    "name": "Pears",
-    "qty": 3,
-    "unit": "L",
-    "category": "Pantry",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/pears.svg"
-  },
-  {
-    "id": "17bced9c55dd",
-    "name": "Zucchini",
-    "qty": 7,
-    "unit": "g",
-    "category": "Spice",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/zucchini.svg"
-  },
-  {
-    "id": "0a32c69e4a33",
-    "name": "Broccoli",
-    "qty": 3,
-    "unit": "L",
-    "category": "Spice",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/broccoli.svg"
-  },
-  {
-    "id": "431ff22259fb",
-    "name": "Carrots",
-    "qty": 6,
-    "unit": "kg",
-    "category": "Vegetable",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/carrots.svg"
-  },
-  {
-    "id": "b98cf1a91565",
-    "name": "Beef Mince",
-    "qty": 11,
-    "unit": "L",
-    "category": "Seafood",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/beef-mince.svg"
-  },
-  {
-    "id": "4f8ba28f173e",
-    "name": "Prawns",
-    "qty": 16,
-    "unit": "L",
-    "category": "Fruit",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/prawns.svg"
-  },
-  {
-    "id": "0f691b9ce743",
-    "name": "Tofu",
-    "qty": 6,
-    "unit": "L",
-    "category": "Pantry",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/tofu.svg"
-  },
-  {
-    "id": "d52eaeeddfdb",
-    "name": "Milk Powder",
-    "qty": 1,
-    "unit": "jar",
-    "category": "Baking",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/milk-powder.svg"
-  },
-  {
-    "id": "735ff07ee868",
-    "name": "Almonds",
-    "qty": 7,
-    "unit": "kg",
-    "category": "Dairy",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/almonds.svg"
-  },
-  {
-    "id": "cb92ea28a5e3",
-    "name": "Walnuts",
-    "qty": 15,
-    "unit": "pcs",
-    "category": "Condiment",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/walnuts.svg"
-  },
-  {
-    "id": "90597c240015",
-    "name": "Peanut Butter",
-    "qty": 15,
-    "unit": "pcs",
-    "category": "Pantry",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/peanut-butter.svg"
-  },
-  {
-    "id": "0ee73a9b0c4b",
-    "name": "Maple Syrup",
-    "qty": 14,
-    "unit": "pcs",
-    "category": "Baking",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/maple-syrup.svg"
-  },
-  {
-    "id": "161db110d08a",
-    "name": "Oats",
-    "qty": 3,
-    "unit": "g",
-    "category": "Baking",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/oats.svg"
-  },
-  {
-    "id": "3e1488b08b8d",
-    "name": "Corn Flour",
-    "qty": 19,
-    "unit": "pcs",
-    "category": "Fruit",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/corn-flour.svg"
-  },
-  {
-    "id": "c89f71156fb3",
-    "name": "Berries",
-    "qty": 7,
-    "unit": "pcs",
-    "category": "Seafood",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/berries.svg"
-  },
-  {
-    "id": "97a89830e890",
-    "name": "Strawberries",
-    "qty": 18,
-    "unit": "g",
-    "category": "Seafood",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/strawberries.svg"
-  },
-  {
-    "id": "288e6d725fd3",
-    "name": "Blueberries",
-    "qty": 17,
-    "unit": "jar",
-    "category": "Meat",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/blueberries.svg"
-  },
-  {
-    "id": "ea2abbed108d",
-    "name": "Coconut Milk",
-    "qty": 15,
-    "unit": "kg",
-    "category": "Condiment",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/coconut-milk.svg"
-  },
-  {
-    "id": "cd1654ab2cad",
-    "name": "Cream Cheese",
-    "qty": 16,
-    "unit": "pcs",
-    "category": "Condiment",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/cream-cheese.svg"
-  },
-  {
-    "id": "bf9cee6ef204",
-    "name": "Sausages",
-    "qty": 10,
-    "unit": "kg",
-    "category": "Fruit",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/sausages.svg"
-  },
-  {
-    "id": "565836562460",
-    "name": "Bacon",
-    "qty": 9,
-    "unit": "pcs",
-    "category": "Condiment",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/bacon.svg"
-  },
-  {
-    "id": "c9b0ab989ec1",
-    "name": "Instant Noodles",
-    "qty": 13,
-    "unit": "kg",
-    "category": "Condiment",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/instant-noodles.svg"
-  },
-  {
-    "id": "24c60f771fec",
-    "name": "Ketchup",
-    "qty": 8,
-    "unit": "jar",
-    "category": "Spice",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/ketchup.svg"
-  },
-  {
-    "id": "0c6ea1ba4398",
-    "name": "Mustard",
-    "qty": 7,
-    "unit": "L",
-    "category": "Meat",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/mustard.svg"
-  },
-  {
-    "id": "d3f1c245c6a1",
-    "name": "Mayonnaise",
-    "qty": 3,
-    "unit": "L",
-    "category": "Dairy",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/mayonnaise.svg"
-  },
-  {
-    "id": "911cc662e344",
-    "name": "Brown Sugar",
-    "qty": 16,
-    "unit": "L",
-    "category": "Vegetable",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/brown-sugar.svg"
-  },
-  {
-    "id": "c9c26c852864",
-    "name": "Molasses",
-    "qty": 15,
-    "unit": "L",
-    "category": "Fruit",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/molasses.svg"
-  },
-  {
-    "id": "389f5b1f25c0",
-    "name": "Green Tea",
-    "qty": 3,
-    "unit": "kg",
-    "category": "Meat",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/green-tea.svg"
-  },
-  {
-    "id": "8ad0a606e01a",
-    "name": "Black Tea",
-    "qty": 16,
-    "unit": "g",
-    "category": "Dairy",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/black-tea.svg"
-  },
-  {
-    "id": "6fda5d0f55b5",
-    "name": "Coffee Beans",
-    "qty": 17,
-    "unit": "jar",
-    "category": "Spice",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/coffee-beans.svg"
-  },
-  {
-    "id": "4830b9cf8580",
-    "name": "Ground Coffee",
-    "qty": 15,
-    "unit": "jar",
-    "category": "Condiment",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/ground-coffee.svg"
-  },
-  {
-    "id": "e09813f80153",
-    "name": "Pasta",
-    "qty": 19,
-    "unit": "jar",
-    "category": "Seafood",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/pasta.svg"
-  },
-  {
-    "id": "1c1ad4ae57a5",
-    "name": "Spaghetti",
-    "qty": 6,
-    "unit": "jar",
-    "category": "Dairy",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/spaghetti.svg"
-  },
-  {
-    "id": "90120b8b4d8a",
-    "name": "Macaroni",
-    "qty": 4,
-    "unit": "pcs",
-    "category": "Pantry",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/macaroni.svg"
-  },
-  {
-    "id": "261eeaa519b9",
-    "name": "Lentils",
-    "qty": 16,
-    "unit": "jar",
-    "category": "Pantry",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/lentils.svg"
-  },
-  {
-    "id": "6ea85ff1f0d7",
-    "name": "Chickpeas",
-    "qty": 1,
-    "unit": "jar",
-    "category": "Meat",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/chickpeas.svg"
-  },
-  {
-    "id": "012540ce0412",
-    "name": "Kidney Beans",
-    "qty": 10,
-    "unit": "pcs",
-    "category": "Meat",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/kidney-beans.svg"
-  },
-  {
-    "id": "5043d16ffd50",
-    "name": "Red Chili Powder",
-    "qty": 15,
-    "unit": "L",
-    "category": "Vegetable",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/red-chili-powder.svg"
-  },
-  {
-    "id": "80be4f5f1cd4",
-    "name": "Turmeric Powder",
-    "qty": 6,
-    "unit": "g",
-    "category": "Dairy",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/turmeric-powder.svg"
-  },
-  {
-    "id": "ae2e94d24a4d",
-    "name": "Baking Powder",
-    "qty": 8,
-    "unit": "jar",
-    "category": "Spice",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/baking-powder.svg"
-  },
-  {
-    "id": "038b48347179",
-    "name": "Yeast",
-    "qty": 9,
-    "unit": "L",
-    "category": "Seafood",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/yeast.svg"
-  },
-  {
-    "id": "a589b74a66df",
-    "name": "Gelatin",
-    "qty": 20,
-    "unit": "jar",
-    "category": "Seafood",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/gelatin.svg"
-  },
-  {
-    "id": "7de0fbb79ebf",
-    "name": "Vanilla Extract",
-    "qty": 6,
-    "unit": "g",
-    "category": "Baking",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/vanilla-extract.svg"
-  },
-  {
-    "id": "327aef169a26",
-    "name": "Bay Leaves",
-    "qty": 15,
-    "unit": "kg",
-    "category": "Dairy",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/bay-leaves.svg"
-  },
-  {
-    "id": "3d57198addd1",
-    "name": "Cardamom",
-    "qty": 16,
-    "unit": "L",
-    "category": "Dairy",
-    "expiry": "2026-02-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/cardamom.svg"
-  },
-  {
-    "id": "6abb0d466994",
-    "name": "Cloves",
-    "qty": 19,
-    "unit": "g",
-    "category": "Spice",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/cloves.svg"
-  },
-  {
-    "id": "5b5ea2ebaf97",
-    "name": "Nutmeg",
-    "qty": 2,
-    "unit": "L",
-    "category": "Fruit",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/nutmeg.svg"
-  },
-  {
-    "id": "a645e89d6d0a",
-    "name": "Saffron",
-    "qty": 2,
-    "unit": "jar",
-    "category": "Meat",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/saffron.svg"
-  },
-  {
-    "id": "4366ea070f02",
-    "name": "Dried Herbs",
-    "qty": 19,
-    "unit": "g",
-    "category": "Seafood",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/dried-herbs.svg"
-  },
-  {
-    "id": "cf1f9a4c3d12",
-    "name": "Tomatoes Small",
-    "qty": 20,
-    "unit": "pcs",
-    "category": "Vegetable",
-    "expiry": "2025-11-25",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/tomatoes-small.svg"
-  },
-  {
-    "id": "95ae67f124a4",
-    "name": "Basmati Rice Large",
-    "qty": 17,
-    "unit": "kg",
-    "category": "Grain",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/basmati-rice-large.svg"
-  },
-  {
-    "id": "a4c3f34594a6",
-    "name": "Whole Milk Organic",
-    "qty": 3,
-    "unit": "L",
-    "category": "Dairy",
-    "expiry": "2025-11-26",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/whole-milk-organic.svg"
-  },
-  {
-    "id": "ab9d0f7e81c8",
-    "name": "Eggs Premium",
-    "qty": 6,
-    "unit": "pcs",
-    "category": "Dairy",
-    "expiry": "2025-12-01",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/eggs-premium.svg"
-  },
-  {
-    "id": "c8fb827854b4",
-    "name": "Pumpkin Puree",
-    "qty": 6.03,
-    "unit": "can",
-    "category": "Pantry",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/pumpkin-puree.svg"
-  },
-  {
-    "id": "46f652f33dc9",
-    "name": "Sourdough Starter",
-    "qty": 9.71,
-    "unit": "jar",
-    "category": "Baking",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/sourdough-starter.svg"
-  },
-  {
-    "id": "8914e24030b7",
-    "name": "Quinoa",
-    "qty": 19.62,
-    "unit": "kg",
-    "category": "Grain",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/quinoa.svg"
-  },
-  {
-    "id": "753f13405164",
-    "name": "Edamame",
-    "qty": 12.6,
-    "unit": "bag",
-    "category": "Frozen",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/edamame.svg"
-  },
-  {
-    "id": "9ecbd760ca7a",
-    "name": "Ricotta Cheese",
-    "qty": 6.66,
-    "unit": "g",
-    "category": "Dairy",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/ricotta-cheese.svg"
-  },
-  {
-    "id": "199ab655d8ef",
-    "name": "Garam Masala",
-    "qty": 14.71,
-    "unit": "g",
-    "category": "Spice",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/garam-masala.svg"
-  },
-  {
-    "id": "f6dda1e14218",
-    "name": "Star Anise",
-    "qty": 3.09,
-    "unit": "g",
-    "category": "Spice",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/star-anise.svg"
-  },
-  {
-    "id": "89564ee2d67a",
-    "name": "Agave Nectar",
-    "qty": 12.0,
-    "unit": "bottle",
-    "category": "Condiment",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/agave-nectar.svg"
-  },
-  {
-    "id": "955613da3042",
-    "name": "Quark",
-    "qty": 8.27,
-    "unit": "g",
-    "category": "Dairy",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/quark.svg"
-  },
-  {
-    "id": "2e17f49a6076",
-    "name": "Polenta",
-    "qty": 4.98,
-    "unit": "kg",
-    "category": "Grain",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/polenta.svg"
-  },
-  {
-    "id": "81f28f7930f7",
-    "name": "Rye Flour",
-    "qty": 11.13,
-    "unit": "kg",
-    "category": "Baking",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/rye-flour.svg"
-  },
-  {
-    "id": "49899f158d7a",
-    "name": "Miso Paste",
-    "qty": 6.17,
-    "unit": "jar",
-    "category": "Pantry",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/miso-paste.svg"
-  },
-  {
-    "id": "4f3bb1590cef",
-    "name": "Tahini",
-    "qty": 15.54,
-    "unit": "jar",
-    "category": "Pantry",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/tahini.svg"
-  },
-  {
-    "id": "aa5ecd06d16d",
-    "name": "Soba Noodles",
-    "qty": 19.27,
-    "unit": "pack",
-    "category": "Pantry",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/soba-noodles.svg"
-  },
-  {
-    "id": "ebed6269d743",
-    "name": "Wasabi Paste",
-    "qty": 19.62,
-    "unit": "tube",
-    "category": "Condiment",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/wasabi-paste.svg"
-  },
-  {
-    "id": "5c9d74647349",
-    "name": "Pickled Ginger",
-    "qty": 2.52,
-    "unit": "jar",
-    "category": "Condiment",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/pickled-ginger.svg"
-  },
-  {
-    "id": "2de6672d92be",
-    "name": "Saffron Threads",
-    "qty": 13.19,
-    "unit": "g",
-    "category": "Spice",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/saffron-threads.svg"
-  },
-  {
-    "id": "f3d97513d7cc",
-    "name": "Crushed Tomatoes",
-    "qty": 7.07,
-    "unit": "can",
-    "category": "Pantry",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/crushed-tomatoes.svg"
-  },
-  {
-    "id": "1a6d563762b3",
-    "name": "Beetroot",
-    "qty": 9.72,
-    "unit": "kg",
-    "category": "Vegetable",
-    "expiry": "",
-    "lastUsed": "",
-    "usageLog": [],
-    "icon": "assets/beetroot.svg"
+// In-memory application state
+let state = {
+  user: null,
+  token: null,
+  items: [],
+  suppliers: [],
+  deliveries: [],
+  transactions: [],
+  notifications: [],
+  users: [],
+  settings: {
+    notifications: true,
+    itemsPerPage: 25,
+    theme: 'light'
   }
-]
-;
-  saveState();
+};
+
+// ==========================================
+// Authentication & Token Management
+// ==========================================
+
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || null;
 }
 
-function ensureData(){ loadState(); if(!localStorage.getItem(STORAGE_KEY)){ seedDemo(); } }
-function activateNav(){ qsa('.nav-item').forEach(n=>{ const target = n.dataset.target; if(target === document.body.dataset.page) n.classList.add('active'); else n.classList.remove('active'); }); }
-function redirectTo(page){ window.location = page; }
+export function setAuth(token, user, remember = true) {
+  state.token = token;
+  state.user = user;
+  const storage = remember ? localStorage : sessionStorage;
+  if (token) storage.setItem(TOKEN_KEY, token);
+  if (user) storage.setItem(USER_KEY, JSON.stringify(user));
+}
 
-window.Shared = { ensureData, state, saveState, loadState, uid, activateNav, redirectTo, qs, qsa, seedDemo };
+export function getCurrentUser() {
+  if (state.user) return state.user;
+  try {
+    const raw = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY);
+    if (raw) {
+      state.user = JSON.parse(raw);
+      return state.user;
+    }
+  } catch (e) {
+    console.warn('Error reading stored user', e);
+  }
+  return null;
+}
+
+export function requireAuth(allowedRoles = []) {
+  const user = getCurrentUser();
+  const token = getToken();
+
+  if (!user || !token) {
+    window.location = 'index.html';
+    return null;
+  }
+
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+    alert(`Access denied. Your role (${user.role}) is not authorized for this section.`);
+    if (user.role === 'chef') window.location = 'chef.html';
+    else if (user.role === 'delivery') window.location = 'delivery.html';
+    else window.location = 'dashboard.html';
+    return null;
+  }
+
+  return user;
+}
+
+export function logout() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(USER_KEY);
+  state.user = null;
+  state.token = null;
+  window.location = 'index.html';
+}
+
+// ==========================================
+// HTTP API Client
+// ==========================================
+
+async function apiRequest(endpoint, options = {}) {
+  const token = getToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...(options.headers || {})
+  };
+
+  try {
+    const res = await fetch(endpoint, { ...options, headers });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || `API error: ${res.status}`);
+    }
+    return data;
+  } catch (err) {
+    console.warn(`API request to ${endpoint} failed:`, err.message);
+    throw err;
+  }
+}
+
+// API Methods
+export async function apiLogin(email, password, remember = true) {
+  const data = await apiRequest('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password })
+  });
+  if (data.success && data.token) {
+    setAuth(data.token, data.user, remember);
+  }
+  return data;
+}
+
+export async function apiForgotPassword(email) {
+  return await apiRequest('/api/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email })
+  });
+}
+
+export async function apiGetInventory(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  return await apiRequest(`/api/inventory${query ? '?' + query : ''}`);
+}
+
+export async function apiGetItem(id) {
+  return await apiRequest(`/api/inventory/${id}`);
+}
+
+export async function apiAddInventory(itemData) {
+  return await apiRequest('/api/inventory', {
+    method: 'POST',
+    body: JSON.stringify(itemData)
+  });
+}
+
+export async function apiUpdateInventory(id, itemData) {
+  return await apiRequest(`/api/inventory/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(itemData)
+  });
+}
+
+export async function apiDeleteInventory(id) {
+  return await apiRequest(`/api/inventory/${id}`, {
+    method: 'DELETE'
+  });
+}
+
+export async function apiStockOperation(itemId, operation, quantity, reason = '', batchNo = '', expiryDate = '') {
+  return await apiRequest('/api/stock/operation', {
+    method: 'POST',
+    body: JSON.stringify({ itemId, operation, quantity, reason, batchNo, expiryDate })
+  });
+}
+
+export async function apiGetSuppliers() {
+  return await apiRequest('/api/suppliers');
+}
+
+export async function apiAddSupplier(data) {
+  return await apiRequest('/api/suppliers', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function apiUpdateSupplier(id, data) {
+  return await apiRequest(`/api/suppliers/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function apiDeleteSupplier(id) {
+  return await apiRequest(`/api/suppliers/${id}`, {
+    method: 'DELETE'
+  });
+}
+
+export async function apiGetUsers() {
+  return await apiRequest('/api/users');
+}
+
+export async function apiAddUser(data) {
+  return await apiRequest('/api/users', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function apiUpdateUser(id, data) {
+  return await apiRequest(`/api/users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function apiDeleteUser(id) {
+  return await apiRequest(`/api/users/${id}`, {
+    method: 'DELETE'
+  });
+}
+
+export async function apiGetDeliveries() {
+  return await apiRequest('/api/deliveries');
+}
+
+export async function apiAddDelivery(data) {
+  return await apiRequest('/api/deliveries', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function apiUpdateDelivery(id, data) {
+  return await apiRequest(`/api/deliveries/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function apiGetTransactions(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  return await apiRequest(`/api/transactions${query ? '?' + query : ''}`);
+}
+
+export async function apiGetNotifications() {
+  return await apiRequest('/api/notifications');
+}
+
+export async function apiMarkNotificationRead(id) {
+  return await apiRequest(`/api/notifications/${id}/read`, { method: 'PUT' });
+}
+
+export async function apiMarkAllNotificationsRead() {
+  return await apiRequest('/api/notifications/mark-all-read', { method: 'PUT' });
+}
+
+export async function apiClearNotifications() {
+  return await apiRequest('/api/notifications', { method: 'DELETE' });
+}
+
+export async function apiGetAnalyticsOverview() {
+  return await apiRequest('/api/analytics/overview');
+}
+
+export async function apiGetRecommendations() {
+  return await apiRequest('/api/recommendations');
+}
+
+export async function apiGetReport(type) {
+  return await apiRequest(`/api/reports/${type}`);
+}
+
+export async function apiUpdateProfile(data) {
+  return await apiRequest('/api/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function apiChangePassword(currentPassword, newPassword) {
+  return await apiRequest('/api/auth/change-password', {
+    method: 'PUT',
+    body: JSON.stringify({ currentPassword, newPassword })
+  });
+}
+
+// ==========================================
+// UI Helpers & Injections
+// ==========================================
+
+export function showToast(message, type = 'info', duration = 3500) {
+  let snackbar = document.getElementById('global-snackbar');
+  if (!snackbar) {
+    snackbar = document.createElement('div');
+    snackbar.id = 'global-snackbar';
+    snackbar.className = 'snackbar hidden';
+    document.body.appendChild(snackbar);
+  }
+
+  snackbar.className = `snackbar snackbar-${type}`;
+  let icon = 'ℹ️';
+  if (type === 'success') icon = '✅';
+  if (type === 'error') icon = '❌';
+  if (type === 'warning') icon = '⚠️';
+
+  snackbar.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+  snackbar.classList.remove('hidden');
+
+  setTimeout(() => {
+    snackbar.classList.add('hidden');
+  }, duration);
+}
+
+export function formatStatusBadge(status) {
+  const s = (status || 'AVAILABLE').toUpperCase();
+  switch (s) {
+    case 'AVAILABLE':
+    case 'SAFE':
+      return `<span class="badge badge-available"><span class="badge-dot"></span> Available</span>`;
+    case 'LOW_STOCK':
+    case 'LOW STOCK':
+      return `<span class="badge badge-low"><span class="badge-dot"></span> Low Stock</span>`;
+    case 'EXPIRING_SOON':
+    case 'EXPIRING SOON':
+      return `<span class="badge badge-expiring"><span class="badge-dot"></span> Expiring Soon</span>`;
+    case 'EXPIRED':
+      return `<span class="badge badge-expired"><span class="badge-dot"></span> Expired</span>`;
+    default:
+      return `<span class="badge badge-safe">${s}</span>`;
+  }
+}
+
+export function formatRoleBadge(role) {
+  const r = (role || 'guest').toUpperCase();
+  let color = 'badge-role';
+  if (r === 'ADMIN') color = 'badge-safe';
+  if (r === 'CHEF') color = 'badge-expiring';
+  if (r === 'DELIVERY') color = 'badge-available';
+  return `<span class="badge ${color}">${r}</span>`;
+}
+
+export function formatCurrency(amount) {
+  const n = parseFloat(amount) || 0;
+  return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+export function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+// Injects standard App Navigation Shell
+export function renderAppShell(activeTarget = 'dashboard') {
+  const user = getCurrentUser() || { name: 'Demo User', role: 'admin', email: 'admin@example.com' };
+  const initials = user.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'KI';
+
+  // Inject Header if container exists
+  const headerEl = document.querySelector('.header');
+  if (headerEl) {
+    headerEl.innerHTML = `
+      <a href="${user.role === 'chef' ? 'chef.html' : user.role === 'delivery' ? 'delivery.html' : 'dashboard.html'}" class="brand">
+        <div class="logo">KI</div>
+        <div>
+          <h1>Kitchen Inventory</h1>
+          <div class="small muted">Smart Management & Pantry Operations</div>
+        </div>
+      </a>
+
+      <div class="controls">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input class="input" id="global-search" placeholder="Search inventory, batch, supplier..." autocomplete="off">
+        </div>
+
+        <div class="header-actions">
+          <div style="position:relative">
+            <button class="icon-btn" id="btn-header-notif" title="Notifications">
+              🔔
+              <span class="notif-badge" id="header-notif-count" style="display:none">0</span>
+            </button>
+            <div class="notif-dropdown" id="header-notif-dropdown">
+              <div class="notif-header">
+                <span class="bold small">Recent Notifications</span>
+                <a href="notifications.html" class="small muted" style="text-decoration:none">View All</a>
+              </div>
+              <div id="header-notif-list" style="max-height:260px;overflow-y:auto">
+                <div class="small muted text-center" style="padding:12px">Loading alerts...</div>
+              </div>
+            </div>
+          </div>
+
+          <a href="profile.html" class="profile-row" title="My Profile">
+            <div class="avatar" id="header-avatar">${initials}</div>
+            <div style="text-align:left">
+              <div style="font-weight:600;font-size:13px;color:var(--text-main)" id="header-user">${user.name || 'User'}</div>
+              <div class="small muted" style="font-size:11px" id="header-role">${(user.role || 'Admin').toUpperCase()}</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    `;
+
+    // Wire global search input
+    const searchInput = document.getElementById('global-search');
+    if (searchInput) {
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const q = searchInput.value.trim();
+          if (q) {
+            window.location = `inventory.html?search=${encodeURIComponent(q)}`;
+          }
+        }
+      });
+    }
+
+    // Wire notifications popup
+    const notifBtn = document.getElementById('btn-header-notif');
+    const notifDropdown = document.getElementById('header-notif-dropdown');
+    if (notifBtn && notifDropdown) {
+      notifBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notifDropdown.classList.toggle('show');
+        if (notifDropdown.classList.contains('show')) {
+          loadHeaderNotifications();
+        }
+      });
+      document.addEventListener('click', () => notifDropdown.classList.remove('show'));
+    }
+  }
+
+  // Inject Sidebar Navigation
+  const asideEl = document.querySelector('aside');
+  if (asideEl) {
+    let navLinks = '';
+    const role = user.role || 'admin';
+
+    if (role === 'admin') {
+      navLinks = `
+        <div class="nav-section-title">Overview</div>
+        <a class="nav-item ${activeTarget === 'dashboard' ? 'active' : ''}" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a class="nav-item ${activeTarget === 'inventory' ? 'active' : ''}" href="inventory.html"><span class="nav-icon">📦</span> Inventory</a>
+        <a class="nav-item ${activeTarget === 'forecast' ? 'active' : ''}" href="forecast.html"><span class="nav-icon">📈</span> Forecast & AI</a>
+        <a class="nav-item ${activeTarget === 'usage' ? 'active' : ''}" href="usage.html"><span class="nav-icon">📝</span> Usage Logs</a>
+
+        <div class="nav-section-title">Management</div>
+        <a class="nav-item ${activeTarget === 'suppliers' ? 'active' : ''}" href="suppliers.html"><span class="nav-icon">🏭</span> Suppliers</a>
+        <a class="nav-item ${activeTarget === 'users' ? 'active' : ''}" href="users.html"><span class="nav-icon">👥</span> Users</a>
+        <a class="nav-item ${activeTarget === 'history' ? 'active' : ''}" href="history.html"><span class="nav-icon">📜</span> Audit History</a>
+        <a class="nav-item ${activeTarget === 'reports' ? 'active' : ''}" href="reports.html"><span class="nav-icon">📊</span> Reports</a>
+        <a class="nav-item ${activeTarget === 'notifications' ? 'active' : ''}" href="notifications.html"><span class="nav-icon">🔔</span> Notifications</a>
+
+        <div class="nav-section-title">Account</div>
+        <a class="nav-item ${activeTarget === 'profile' ? 'active' : ''}" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+        <a class="nav-item ${activeTarget === 'settings' ? 'active' : ''}" href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+      `;
+    } else if (role === 'chef') {
+      navLinks = `
+        <div class="nav-section-title">Chef Station</div>
+        <a class="nav-item ${activeTarget === 'chef' ? 'active' : ''}" href="chef.html"><span class="nav-icon">👨‍🍳</span> Chef Dashboard</a>
+        <a class="nav-item ${activeTarget === 'inventory' ? 'active' : ''}" href="inventory.html"><span class="nav-icon">📦</span> Kitchen Stock</a>
+        <a class="nav-item ${activeTarget === 'usage' ? 'active' : ''}" href="usage.html"><span class="nav-icon">📝</span> Prep Logs</a>
+        <a class="nav-item ${activeTarget === 'notifications' ? 'active' : ''}" href="notifications.html"><span class="nav-icon">🔔</span> Expiry Alerts</a>
+
+        <div class="nav-section-title">Account</div>
+        <a class="nav-item ${activeTarget === 'profile' ? 'active' : ''}" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+        <a class="nav-item ${activeTarget === 'settings' ? 'active' : ''}" href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+      `;
+    } else if (role === 'delivery') {
+      navLinks = `
+        <div class="nav-section-title">Logistics & Intake</div>
+        <a class="nav-item ${activeTarget === 'delivery' ? 'active' : ''}" href="delivery.html"><span class="nav-icon">🚚</span> Delivery Dashboard</a>
+        <a class="nav-item ${activeTarget === 'inventory' ? 'active' : ''}" href="inventory.html"><span class="nav-icon">📦</span> Stock Intake</a>
+        <a class="nav-item ${activeTarget === 'suppliers' ? 'active' : ''}" href="suppliers.html"><span class="nav-icon">🏭</span> Suppliers</a>
+        <a class="nav-item ${activeTarget === 'notifications' ? 'active' : ''}" href="notifications.html"><span class="nav-icon">🔔</span> Alerts</a>
+
+        <div class="nav-section-title">Account</div>
+        <a class="nav-item ${activeTarget === 'profile' ? 'active' : ''}" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+        <a class="nav-item ${activeTarget === 'settings' ? 'active' : ''}" href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+      `;
+    }
+
+    asideEl.innerHTML = `
+      <nav>${navLinks}</nav>
+      <hr style="margin:14px 0;border:none;border-top:1px solid var(--border-subtle)"/>
+      <div style="padding:0 8px">
+        <button id="btn-sidebar-logout" class="btn-ghost btn-sm" style="width:100%">🚪 Logout</button>
+      </div>
+    `;
+
+    document.getElementById('btn-sidebar-logout')?.addEventListener('click', () => {
+      if (confirm('Are you sure you want to sign out?')) {
+        logout();
+      }
+    });
+  }
+
+  // Load initial notification count badge
+  refreshNotificationBadge();
+}
+
+async function refreshNotificationBadge() {
+  try {
+    const res = await apiGetNotifications();
+    const badge = document.getElementById('header-notif-count');
+    if (badge && res.success) {
+      if (res.unreadCount > 0) {
+        badge.textContent = res.unreadCount;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  } catch (e) {
+    // offline or not logged in
+  }
+}
+
+async function loadHeaderNotifications() {
+  const container = document.getElementById('header-notif-list');
+  if (!container) return;
+  try {
+    const res = await apiGetNotifications();
+    if (!res.success || (res.notifications || []).length === 0) {
+      container.innerHTML = '<div class="small muted text-center" style="padding:12px">No notifications</div>';
+      return;
+    }
+    const html = res.notifications.slice(0, 5).map(n => {
+      let icon = '🔔';
+      if (n.type === 'EXPIRED') icon = '🔴';
+      else if (n.type === 'EXPIRING_SOON') icon = '🟠';
+      else if (n.type === 'LOW_STOCK') icon = '🟡';
+      else if (n.type === 'RESTOCKED') icon = '🟢';
+      else if (n.type === 'STOCK_USED') icon = '🔵';
+
+      return `
+        <div class="notif-item ${!n.read ? 'unread' : ''}">
+          <span class="notif-icon">${icon}</span>
+          <div class="notif-body">
+            <div class="notif-title">${n.title}</div>
+            <div class="notif-msg">${n.message}</div>
+            <div class="notif-time">${formatDate(n.timestamp)}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = '<div class="small muted text-center" style="padding:12px">Failed to load alerts</div>';
+  }
+}
+
+// ==========================================
+// QR & Barcode Modal Helper
+// ==========================================
+
+export function showItemQRModal(item) {
+  let modal = document.getElementById('qr-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'qr-modal';
+    modal.className = 'modal hidden';
+    modal.innerHTML = `
+      <div class="modal-card" style="max-width:440px;text-align:center">
+        <div class="modal-header">
+          <h3 class="modal-title">Item Tag & QR Code</h3>
+          <button class="btn-close" id="btn-close-qr">&times;</button>
+        </div>
+        <div class="qr-box">
+          <div style="font-weight:700;font-size:18px" id="qr-item-name">Item Name</div>
+          <div class="small muted" id="qr-item-batch">Batch: -</div>
+          <canvas id="qr-canvas-element" width="160" height="160" style="border:1px solid #e2e8f0;border-radius:10px;padding:8px;background:#fff"></canvas>
+          <div class="small bold" id="qr-item-code">ITEM-CODE</div>
+          <div style="font-size:12px;color:var(--muted)" id="qr-item-details">Qty: 0 | Loc: -</div>
+        </div>
+        <div class="actions-row" style="justify-content:center;gap:8px">
+          <button id="btn-print-qr" class="btn btn-sm">🖨️ Print Tag</button>
+          <button id="btn-done-qr" class="btn-ghost btn-sm">Close</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('btn-close-qr').addEventListener('click', () => modal.classList.add('hidden'));
+    document.getElementById('btn-done-qr').addEventListener('click', () => modal.classList.add('hidden'));
+    document.getElementById('btn-print-qr').addEventListener('click', () => window.print());
+  }
+
+  document.getElementById('qr-item-name').textContent = item.name;
+  document.getElementById('qr-item-batch').textContent = `Batch: ${item.batchNo || 'N/A'}`;
+  document.getElementById('qr-item-code').textContent = `SKU: ${item.id.toUpperCase()}`;
+  document.getElementById('qr-item-details').textContent = `Qty: ${item.qty} ${item.unit} | Location: ${item.location || 'Dry Storage'} | Expiry: ${item.expiry || 'N/A'}`;
+
+  // Draw clean simulated QR grid onto canvas
+  const canvas = document.getElementById('qr-canvas-element');
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 160, 160);
+    ctx.fillStyle = '#0f172a';
+
+    // Generate pseudo-random matrix deterministically from item ID
+    const seed = item.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    const cellSize = 8;
+    const count = 20;
+
+    // Corner alignment squares
+    function drawSquare(x, y, size) {
+      ctx.fillRect(x, y, size, size);
+      ctx.clearRect(x + 8, y + 8, size - 16, size - 16);
+      ctx.fillRect(x + 16, y + 16, size - 32, size - 32);
+    }
+    drawSquare(8, 8, 40);
+    drawSquare(112, 8, 40);
+    drawSquare(8, 112, 40);
+
+    // Fill data dots
+    for (let r = 0; r < count; r++) {
+      for (let c = 0; c < count; c++) {
+        // Skip corner square regions
+        if ((r < 7 && c < 7) || (r < 7 && c > 12) || (r > 12 && c < 7)) continue;
+        if (((r * 31 + c * 17 + seed) % 5) < 2) {
+          ctx.fillRect(c * cellSize, r * cellSize, cellSize - 1, cellSize - 1);
+        }
+      }
+    }
+  }
+
+  modal.classList.remove('hidden');
+}
+
+// ==========================================
+// CSV Export Utility
+// ==========================================
+
+export function exportToCSV(filename, rows) {
+  if (!rows || !rows.length) {
+    showToast('No data available to export', 'warning');
+    return;
+  }
+  const keys = Object.keys(rows[0]);
+  const csvContent = [
+    keys.join(','),
+    ...rows.map(row => keys.map(k => {
+      let val = row[k] === undefined || row[k] === null ? '' : String(row[k]);
+      val = val.replace(/"/g, '""');
+      if (val.includes(',') || val.includes('\n') || val.includes('"')) {
+        val = `"${val}"`;
+      }
+      return val;
+    }).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${filename}_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('Export downloaded successfully', 'success');
+}
+
+export function activateNav() {
+  const curPage = document.body.dataset.page;
+  renderAppShell(curPage);
+}
+
+// Default export
+export default {
+  state,
+  getToken,
+  setAuth,
+  getCurrentUser,
+  requireAuth,
+  logout,
+  apiLogin,
+  apiForgotPassword,
+  apiGetInventory,
+  apiGetItem,
+  apiAddInventory,
+  apiUpdateInventory,
+  apiDeleteInventory,
+  apiStockOperation,
+  apiGetSuppliers,
+  apiAddSupplier,
+  apiUpdateSupplier,
+  apiDeleteSupplier,
+  apiGetUsers,
+  apiAddUser,
+  apiUpdateUser,
+  apiDeleteUser,
+  apiGetDeliveries,
+  apiAddDelivery,
+  apiUpdateDelivery,
+  apiGetTransactions,
+  apiGetNotifications,
+  apiMarkNotificationRead,
+  apiMarkAllNotificationsRead,
+  apiClearNotifications,
+  apiGetAnalyticsOverview,
+  apiGetRecommendations,
+  apiGetReport,
+  apiUpdateProfile,
+  apiChangePassword,
+  showToast,
+  formatStatusBadge,
+  formatRoleBadge,
+  formatCurrency,
+  formatDate,
+  renderAppShell,
+  showItemQRModal,
+  exportToCSV,
+  activateNav
+};

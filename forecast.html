@@ -1,1 +1,203 @@
-<html><body><p>forecast.html - placeholder (open improved project files for full functionality).</p></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart Forecast &amp; Recommendations — Kitchen Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="forecast">
+  <header class="header"></header>
+
+  <div class="container grid">
+    <aside></aside>
+
+    <main>
+      <!-- Top Overview Banner -->
+      <div class="card" style="padding:18px 22px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <h2 style="font-size:20px;font-weight:800;letter-spacing:-0.3px">📈 Smart Reorder &amp; Demand Forecast</h2>
+            <div class="small muted">Algorithmic replenishment recommendations based on minimum threshold safety buffers and consumption velocity</div>
+          </div>
+          <span class="badge badge-safe" style="font-size:12px;padding:4px 10px">🤖 Smart Analytics Active</span>
+        </div>
+      </div>
+
+      <!-- Section 1: Intelligent Reorder Suggestions -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Recommended Purchase Orders (Reorder Queue)</div>
+            <div class="card-subtitle">Items currently at or below minimum threshold requiring vendor restocking</div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Category</th>
+                <th>Current Stock</th>
+                <th>Safety Min</th>
+                <th>Recommended Reorder</th>
+                <th>Estimated Cost</th>
+                <th>Supplier</th>
+                <th style="text-align:right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="reorder-queue-body">
+              <tr><td colspan="8" class="small muted text-center" style="padding:24px">Calculating replenishment orders...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section 2: Two Columns: Demand Velocity & Expiry Prevention -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <!-- Demand Velocity -->
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🔥 Fast-Moving Ingredients (Velocity)</div>
+              <div class="card-subtitle">Highest volume ingredients used across culinary stations</div>
+            </div>
+          </div>
+          <div id="fast-moving-list" style="display:flex;flex-direction:column;gap:10px">
+            <div class="small muted text-center" style="padding:20px">Analyzing usage patterns...</div>
+          </div>
+        </div>
+
+        <!-- Waste Prevention & Expiry Risk -->
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🛡️ Waste Prevention Recommendations</div>
+              <div class="card-subtitle">Stock items at risk of spoiling if not consumed soon</div>
+            </div>
+          </div>
+          <div id="expiry-risk-list" style="display:flex;flex-direction:column;gap:10px">
+            <div class="small muted text-center" style="padding:20px">Scanning shelf lives...</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import {
+      requireAuth,
+      renderAppShell,
+      apiGetRecommendations,
+      apiStockOperation,
+      formatCurrency,
+      formatDate,
+      showToast
+    } from './shared.js';
+
+    const user = requireAuth(['admin', 'chef', 'delivery']);
+    if (!user) { /* redirected */ }
+
+    renderAppShell('forecast');
+
+    async function loadRecommendations() {
+      try {
+        const res = await apiGetRecommendations();
+        if (res.success) {
+          renderReorderTable(res.reorderRecommendations || []);
+          renderFastMoving(res.fastMoving || []);
+          renderExpiryRisks(res.expiryRisks || []);
+        }
+      } catch (err) {
+        showToast('Error loading recommendations: ' + err.message, 'error');
+      }
+    }
+
+    function renderReorderTable(items) {
+      const tbody = document.getElementById('reorder-queue-body');
+      if (!items.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="small muted text-center" style="padding:28px">✅ All inventory items are well-stocked above minimum safety buffers!</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => `
+        <tr>
+          <td style="font-weight:700">${item.name}</td>
+          <td>${item.category}</td>
+          <td><span style="color:#d97706;font-weight:700">${item.currentQty} ${item.unit}</span></td>
+          <td class="small muted">${item.minStock} ${item.unit}</td>
+          <td style="font-weight:800;color:var(--accent-2)">+${item.recommendedReorder} ${item.unit}</td>
+          <td style="font-weight:600">${formatCurrency(item.estimatedCost)}</td>
+          <td class="small">${item.supplier || 'Vendor'}</td>
+          <td style="text-align:right">
+            <button class="btn btn-sm btn-quick-restock" data-id="${item.id}" data-name="${item.name}" data-qty="${item.recommendedReorder}" data-unit="${item.unit}">
+              ↻ Quick Restock
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      document.querySelectorAll('.btn-quick-restock').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const itemId = btn.dataset.id;
+          const name = btn.dataset.name;
+          const qty = parseFloat(btn.dataset.qty);
+          const unit = btn.dataset.unit;
+
+          if (confirm(`Restock ${qty} ${unit} of "${name}" into kitchen inventory?`)) {
+            try {
+              const res = await apiStockOperation(itemId, 'RESTOCK', qty, 'Restocked via Smart Reorder recommendation');
+              if (res.success) {
+                showToast(`Restocked ${name} (+${qty} ${unit})`, 'success');
+                loadRecommendations();
+              }
+            } catch (e) {
+              showToast(e.message || 'Restock failed', 'error');
+            }
+          }
+        });
+      });
+    }
+
+    function renderFastMoving(items) {
+      const container = document.getElementById('fast-moving-list');
+      if (!items.length) {
+        container.innerHTML = '<div class="small muted text-center" style="padding:20px">No historical usage data recorded yet</div>';
+        return;
+      }
+
+      container.innerHTML = items.map((it, idx) => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:24px;height:24px;border-radius:6px;background:var(--accent-light);color:var(--accent-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px">#${idx+1}</div>
+            <div style="font-weight:700">${it.itemName}</div>
+          </div>
+          <div style="font-weight:800;color:var(--accent-2)">${it.totalUsed} units used</div>
+        </div>
+      `).join('');
+    }
+
+    function renderExpiryRisks(items) {
+      const container = document.getElementById('expiry-risk-list');
+      if (!items.length) {
+        container.innerHTML = '<div class="small muted text-center" style="padding:20px">✅ No items nearing expiration!</div>';
+        return;
+      }
+
+      container.innerHTML = items.map(it => `
+        <div style="padding:12px 14px;background:#fff7ed;border-radius:10px;border:1px solid #fed7aa">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="font-weight:700;color:#9a3412">${it.name} (${it.qty} ${it.unit})</div>
+            <span class="badge ${it.status === 'EXPIRED' ? 'badge-expired' : 'badge-expiring'}">${it.status}</span>
+          </div>
+          <div class="small" style="color:#7c2d12;margin-top:4px">${it.actionAdvice}</div>
+          <div class="small muted" style="margin-top:2px">Expiry: ${formatDate(it.expiry)}</div>
+        </div>
+      `).join('');
+    }
+
+    loadRecommendations();
+  </script>
+</body>
+</html>

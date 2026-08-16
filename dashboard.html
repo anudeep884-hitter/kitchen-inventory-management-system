@@ -1,79 +1,520 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Dashboard — Kitchen Inventory</title><link rel="stylesheet" href="styles.css"></head><body data-page="dashboard">
-  <div class="header">
-    <div class="brand"><div class="logo">KI</div><div><h1>Kitchen Inventory</h1><div class="small muted">Overview</div></div></div>
-    <div class="controls"><div class="search-bar" style="width:420px;"><input class="input" id="global-search" placeholder="Search items"></div><div class="profile-row" style="gap:8px;margin-left:12px"><div class="avatar" id="header-avatar">DU</div><div style="text-align:right"><div id="header-user" class="small muted">Demo</div><div id="header-role" class="small muted">Role: -</div></div></div></div>
-  </div>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Dashboard — Kitchen Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="dashboard">
+  <header class="header"></header>
 
   <div class="container grid">
-    <aside>
-      <nav>
-        <a class="nav-item active" data-target="dashboard" href="dashboard.html">🏠 Dashboard</a>
-        <a class="nav-item" data-target="inventory" href="inventory.html">📦 Inventory</a>
-        <a class="nav-item" data-target="forecast" href="forecast.html">📈 Forecast</a>
-        <a class="nav-item" data-target="usage" href="usage.html">📝 Usage</a>
-        <a class="nav-item" data-target="profile" href="profile.html">👤 Profile</a>
-        <a class="nav-item" data-target="settings" href="settings.html">⚙️ Settings</a>
-      </nav>
-      <div style="margin-top:12px" class="small muted">Quick actions</div>
-    </aside>
+    <aside></aside>
+
     <main>
-      <div class="card">
-        <h2>Dashboard</h2>
-        <div class="stat-grid" style="margin-top:12px">
-          <div class="stat"><div class="small muted">Total items</div><div id="stat-total" class="larger">0</div></div>
-          <div class="stat"><div class="small muted">Low stock</div><div id="stat-low" class="larger">0</div></div>
-          <div class="stat"><div class="small muted">Expiring soon</div><div id="stat-expired" class="larger">0</div></div>
-        
+      <!-- Quick Action Buttons -->
+      <div class="card" style="padding:16px 20px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div>
+            <h2 style="font-size:19px;font-weight:800;letter-spacing:-0.3px">Kitchen Operations Overview</h2>
+            <div class="small muted" id="dashboard-date-str">Real-time inventory levels, stock valuation, and usage trends</div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-sm" id="btn-quick-add-item">➕ Add Inventory</button>
+            <button class="btn-ghost btn-sm" id="btn-quick-add-stock">📥 Add Stock</button>
+            <button class="btn-ghost btn-sm" id="btn-quick-use-stock">📤 Use Stock</button>
+            <button class="btn-ghost btn-sm" id="btn-quick-add-supplier">🏭 Add Supplier</button>
+            <a href="reports.html" class="btn-ghost btn-sm">📊 View Reports</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7 Key Metric Cards -->
+      <div class="stat-grid">
+        <div class="stat stat-blue">
+          <div class="stat-icon-wrapper">📦</div>
+          <div class="stat-label">Total Items</div>
+          <div class="larger" id="metric-total-items">0</div>
+          <div class="stat-sub">Across all pantry categories</div>
         </div>
 
-        <!-- Notifications -->
-        <section style="margin-top:16px">
-          <h3>Notifications</h3>
-          <div id="notifications" class="card small muted">
-            <ul id="notifications-list" style="margin:0;padding-left:18px">
-              <li>Loading notifications...</li>
-            </ul>
-          </div>
-        </section>
+        <div class="stat stat-green">
+          <div class="stat-icon-wrapper">✅</div>
+          <div class="stat-label">Available Stock</div>
+          <div class="larger" id="metric-available-stock">0</div>
+          <div class="stat-sub">Above minimum safety levels</div>
+        </div>
 
-          <h3>Permissions</h3>
-          <div id="perm-note" class="small muted">Role-based actions will appear on Inventory & Usage pages.</div>
-        </section>
+        <div class="stat stat-amber">
+          <div class="stat-icon-wrapper">⚠️</div>
+          <div class="stat-label">Low Stock</div>
+          <div class="larger" id="metric-low-stock">0</div>
+          <div class="stat-sub"><a href="forecast.html" style="color:var(--accent-2);text-decoration:none">Needs reordering &rarr;</a></div>
+        </div>
+
+        <div class="stat stat-red">
+          <div class="stat-icon-wrapper">🚫</div>
+          <div class="stat-label">Expired Items</div>
+          <div class="larger" id="metric-expired-items">0</div>
+          <div class="stat-sub">Immediate disposal required</div>
+        </div>
+
+        <div class="stat stat-purple">
+          <div class="stat-icon-wrapper">⏰</div>
+          <div class="stat-label">Expiring Soon</div>
+          <div class="larger" id="metric-expiring-soon">0</div>
+          <div class="stat-sub">Within next 3 days</div>
+        </div>
+
+        <div class="stat stat-teal">
+          <div class="stat-icon-wrapper">🍳</div>
+          <div class="stat-label">Today's Usage</div>
+          <div class="larger" id="metric-today-consumption">0</div>
+          <div class="stat-sub">Units logged today</div>
+        </div>
+
+        <div class="stat stat-blue" style="grid-column: span 1 / -1">
+          <div class="stat-icon-wrapper">💰</div>
+          <div class="stat-label">Total Inventory Valuation</div>
+          <div class="larger" id="metric-inventory-value">₹0.00</div>
+          <div class="stat-sub">Total capital held in active kitchen inventory (Qty &times; Unit Purchase Price)</div>
+        </div>
+      </div>
+
+      <!-- Charts & Visual Analytics Section -->
+      <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-bottom:20px">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header">
+            <div>
+              <div class="card-title">7-Day Kitchen Consumption Trend</div>
+              <div class="card-subtitle">Daily quantity used across all items</div>
+            </div>
+            <span class="badge badge-safe">Weekly Trend</span>
+          </div>
+          <div class="chart-container" id="consumption-chart-wrapper">
+            <div class="chart-bars" id="consumption-bars">
+              <!-- Dynamically generated bars -->
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Top Valued Pantry Items</div>
+              <div class="card-subtitle">Highest inventory capital investment</div>
+            </div>
+          </div>
+          <div id="top-valued-list" style="display:flex;flex-direction:column;gap:10px">
+            <div class="small muted text-center" style="padding:20px">Loading items...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-Column Section: Recent Activity & Notifications -->
+      <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:18px">
+        <!-- Recent Activity Audit Log -->
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Recent Inventory Activity</div>
+              <div class="card-subtitle">Real-time stock movements & user actions</div>
+            </div>
+            <a href="history.html" class="btn-ghost btn-sm">Full History &rarr;</a>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Action</th>
+                  <th>Qty</th>
+                  <th>User</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-activity-body">
+                <tr><td colspan="5" class="small muted text-center" style="padding:20px">Loading activity...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Recent Notifications -->
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Active Notifications</div>
+              <div class="card-subtitle">Critical alerts & warnings</div>
+            </div>
+            <a href="notifications.html" class="btn-ghost btn-sm">Manage &rarr;</a>
+          </div>
+          <div id="dashboard-notifications-list" style="display:flex;flex-direction:column;gap:8px">
+            <div class="small muted text-center" style="padding:20px">Loading alerts...</div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
 
-<script>
-(function(){
-  const STORAGE_KEY = 'kitchen_inventory_v1_mp_improved';
-  function getState(){ try{ const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : { user: null, items: [] }; }catch(e){ return { user:null, items: [] }; } }
+  <!-- Quick Stock Operation Modal -->
+  <div id="stock-op-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="stock-op-title">Stock Operation</h3>
+        <button class="btn-close" id="btn-close-stock-op">&times;</button>
+      </div>
+      <form id="stock-op-form">
+        <input type="hidden" id="op-type" value="ADD_STOCK" />
+        
+        <div class="form-group">
+          <label class="form-label" for="op-item-select">Select Inventory Item</label>
+          <select id="op-item-select" class="input" required></select>
+        </div>
 
-  const state = getState();
-  document.getElementById('header-user').textContent = state.user?.name || 'Guest';
-  document.getElementById('header-role').textContent = 'Role: ' + (state.user?.role || 'admin');
-  const total = (state.items || []).length;
-  document.getElementById('stat-total').textContent = total;
-  document.getElementById('stat-low').textContent = (state.items || []).filter(i=>Number(i.qty)<=3).length;
-  document.getElementById('stat-expired').textContent = (state.items || []).filter(i=> i.expiry && new Date(i.expiry) <= (new Date(Date.now()+7*24*60*60*1000))).length;
-})();
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="op-quantity">Quantity</label>
+            <input id="op-quantity" class="input" type="number" step="any" min="0.01" placeholder="e.g. 5" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="op-unit">Unit</label>
+            <input id="op-unit" class="input" readonly placeholder="Unit" />
+          </div>
+        </div>
 
-  // populate notifications: low stock and expiring soon
-  (function populateNotifications(){
-    const listEl = document.getElementById('notifications-list');
-    if(!listEl) return;
-    const items = state.items || [];
-    const low = items.filter(i => Number(i.qty) <= 3);
-    const expiring = items.filter(i => i.expiry && (new Date(i.expiry) <= (new Date(Date.now() + 7*24*60*60*1000))));
-    const notes = [];
-    low.forEach(it => notes.push(`${it.name} is low (Qty: ${it.qty})`));
-    expiring.forEach(it => notes.push(`${it.name} expires on ${it.expiry}`));
-    if(notes.length === 0){
-      listEl.innerHTML = '<li>No notifications — all good.</li>';
-    } else {
-      listEl.innerHTML = notes.map(n => `<li>${n}</li>`).join('');
+        <div class="form-group" id="op-reason-group">
+          <label class="form-label" for="op-reason">Reason / Notes</label>
+          <input id="op-reason" class="input" placeholder="e.g., Weekly restocking from vendor" required />
+        </div>
+
+        <div class="form-row" id="op-batch-row">
+          <div class="form-group">
+            <label class="form-label" for="op-batch">Batch No (Optional)</label>
+            <input id="op-batch" class="input" placeholder="e.g. BAT-2026-01" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="op-expiry">Expiry Date (Optional)</label>
+            <input id="op-expiry" class="input" type="date" />
+          </div>
+        </div>
+
+        <div class="actions-row">
+          <button type="button" class="btn-ghost btn-sm" id="btn-cancel-stock-op">Cancel</button>
+          <button type="submit" class="btn btn-sm" id="btn-submit-stock-op">Confirm Operation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Quick Add Supplier Modal -->
+  <div id="supplier-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Supplier</h3>
+        <button class="btn-close" id="btn-close-supplier">&times;</button>
+      </div>
+      <form id="supplier-form">
+        <div class="form-group">
+          <label class="form-label">Supplier / Company Name</label>
+          <input id="sup-name" class="input" required placeholder="e.g., Metro Wholesale" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Contact Person</label>
+            <input id="sup-contact" class="input" placeholder="e.g., Rajesh Sharma" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input id="sup-phone" class="input" placeholder="+91 98000 00000" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input id="sup-email" class="input" type="email" placeholder="orders@supplier.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Address</label>
+          <input id="sup-address" class="input" placeholder="Market Yard, Sector 4" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Products Supplied</label>
+          <input id="sup-products" class="input" placeholder="e.g., Dairy, Cheeses, Butter" />
+        </div>
+        <div class="actions-row">
+          <button type="button" class="btn-ghost btn-sm" id="btn-cancel-supplier">Cancel</button>
+          <button type="submit" class="btn btn-sm">Save Supplier</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      requireAuth,
+      renderAppShell,
+      apiGetAnalyticsOverview,
+      apiGetInventory,
+      apiStockOperation,
+      apiAddSupplier,
+      formatCurrency,
+      formatDate,
+      showToast
+    } from './shared.js';
+
+    // Verify Admin authentication
+    const user = requireAuth(['admin']);
+    if (!user) { /* redirected */ }
+
+    renderAppShell('dashboard');
+
+    document.getElementById('dashboard-date-str').textContent = `Overview for ${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
+
+    let allInventory = [];
+
+    async function loadDashboardData() {
+      try {
+        const [overviewRes, invRes] = await Promise.all([
+          apiGetAnalyticsOverview(),
+          apiGetInventory()
+        ]);
+
+        if (invRes.success) {
+          allInventory = invRes.items || [];
+          populateItemSelect();
+        }
+
+        if (overviewRes.success) {
+          const stats = overviewRes.stats;
+          document.getElementById('metric-total-items').textContent = stats.totalItems;
+          document.getElementById('metric-available-stock').textContent = stats.availableStock;
+          document.getElementById('metric-low-stock').textContent = stats.lowStock;
+          document.getElementById('metric-expired-items').textContent = stats.expiredItems;
+          document.getElementById('metric-expiring-soon').textContent = stats.expiringSoon;
+          document.getElementById('metric-today-consumption').textContent = stats.todayConsumption;
+          document.getElementById('metric-inventory-value').textContent = formatCurrency(stats.totalInventoryValue);
+
+          // Render 7-day consumption chart
+          renderConsumptionChart(overviewRes.dailyTrends || []);
+
+          // Render top valued items
+          renderTopValued(overviewRes.topValuedItems || []);
+
+          // Render recent activity
+          renderRecentActivity(overviewRes.recentActivity || []);
+
+          // Render recent notifications
+          renderRecentNotifications(overviewRes.recentNotifications || []);
+        }
+      } catch (err) {
+        showToast('Error loading dashboard: ' + err.message, 'error');
+      }
     }
-  })();
 
-</script>
-</body></html>
+    function renderConsumptionChart(trends) {
+      const container = document.getElementById('consumption-bars');
+      if (!trends || !trends.length) {
+        container.innerHTML = '<div class="small muted text-center" style="width:100%;margin:auto">No recent consumption data</div>';
+        return;
+      }
+      const maxVal = Math.max(...trends.map(t => t.consumption), 10);
+      container.innerHTML = trends.map(t => {
+        const heightPct = Math.max(8, Math.round((t.consumption / maxVal) * 100));
+        const dayLabel = new Date(t.date).toLocaleDateString('en-GB', { weekday: 'short' });
+        return `
+          <div class="chart-col">
+            <div class="chart-val">${t.consumption}</div>
+            <div class="chart-bar-fill" style="height:${heightPct}%"></div>
+            <div class="chart-label">${dayLabel}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTopValued(items) {
+      const container = document.getElementById('top-valued-list');
+      if (!items || !items.length) {
+        container.innerHTML = '<div class="small muted text-center">No inventory items found</div>';
+        return;
+      }
+      container.innerHTML = items.map(item => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-radius:10px;border:1px solid var(--border)">
+          <div class="item-cell">
+            <img class="item-thumb" src="${item.icon || 'assets/basmati-rice.svg'}" alt="${item.name}" onerror="this.src='assets/basmati-rice.svg'">
+            <div>
+              <div class="item-title">${item.name}</div>
+              <div class="item-sub">${item.qty} ${item.unit} &bull; ${item.category}</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700;color:var(--accent-2)">${formatCurrency(item.inventoryValue)}</div>
+            <div class="small muted">₹${item.purchasePrice}/${item.unit}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderRecentActivity(txs) {
+      const tbody = document.getElementById('dashboard-activity-body');
+      if (!txs || !txs.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="small muted text-center" style="padding:20px">No recent inventory activity</td></tr>';
+        return;
+      }
+      tbody.innerHTML = txs.map(t => {
+        let opBadge = '<span class="badge badge-safe">Log</span>';
+        if (t.operation === 'USE_STOCK') opBadge = '<span class="badge badge-expiring">- Use</span>';
+        else if (t.operation === 'ADD_STOCK') opBadge = '<span class="badge badge-available">+ Add</span>';
+        else if (t.operation === 'RESTOCK') opBadge = '<span class="badge badge-safe">&#8635; Restock</span>';
+        else if (t.operation === 'MARK_DAMAGED') opBadge = '<span class="badge badge-expired">&#9888; Damaged</span>';
+        else if (t.operation === 'NEW_ITEM') opBadge = '<span class="badge badge-safe">New Item</span>';
+
+        return `
+          <tr>
+            <td style="font-weight:600">${t.itemName}</td>
+            <td>${opBadge}</td>
+            <td style="font-weight:700">${t.quantity} ${t.unit || ''}</td>
+            <td class="small">${t.userName || 'Staff'}</td>
+            <td class="small muted">${formatDate(t.timestamp)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderRecentNotifications(notifs) {
+      const container = document.getElementById('dashboard-notifications-list');
+      if (!notifs || !notifs.length) {
+        container.innerHTML = '<div class="small muted text-center" style="padding:20px">No active notifications &mdash; all good!</div>';
+        return;
+      }
+      container.innerHTML = notifs.map(n => {
+        let icon = '🔔';
+        if (n.type === 'EXPIRED') icon = '🔴';
+        else if (n.type === 'EXPIRING_SOON') icon = '🟠';
+        else if (n.type === 'LOW_STOCK') icon = '🟡';
+        else if (n.type === 'RESTOCKED') icon = '🟢';
+
+        return `
+          <div class="notif-item ${!n.read ? 'unread' : ''}">
+            <span class="notif-icon">${icon}</span>
+            <div class="notif-body">
+              <div class="notif-title">${n.title}</div>
+              <div class="notif-msg">${n.message}</div>
+              <div class="notif-time">${formatDate(n.timestamp)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Modal & Quick Actions Wiring
+    const stockModal = document.getElementById('stock-op-modal');
+    const supModal = document.getElementById('supplier-modal');
+    const itemSelect = document.getElementById('op-item-select');
+    const unitInput = document.getElementById('op-unit');
+
+    function populateItemSelect() {
+      itemSelect.innerHTML = '<option value="">-- Choose an item --</option>' +
+        allInventory.map(i => `<option value="${i.id}" data-unit="${i.unit}" data-qty="${i.qty}">${i.name} (Cur: ${i.qty} ${i.unit})</option>`).join('');
+    }
+
+    itemSelect.addEventListener('change', () => {
+      const selected = itemSelect.selectedOptions[0];
+      if (selected && selected.dataset.unit) {
+        unitInput.value = selected.dataset.unit;
+      } else {
+        unitInput.value = '';
+      }
+    });
+
+    // Quick Add Item
+    document.getElementById('btn-quick-add-item').addEventListener('click', () => {
+      window.location = 'inventory.html?action=new';
+    });
+
+    // Quick Add Stock
+    document.getElementById('btn-quick-add-stock').addEventListener('click', () => {
+      document.getElementById('op-type').value = 'ADD_STOCK';
+      document.getElementById('stock-op-title').textContent = '➕ Add Stock / Restock';
+      document.getElementById('op-reason').placeholder = 'e.g., Weekly inventory delivery';
+      document.getElementById('op-batch-row').style.display = 'grid';
+      stockModal.classList.remove('hidden');
+    });
+
+    // Quick Use Stock
+    document.getElementById('btn-quick-use-stock').addEventListener('click', () => {
+      document.getElementById('op-type').value = 'USE_STOCK';
+      document.getElementById('stock-op-title').textContent = '📤 Record Stock Usage';
+      document.getElementById('op-reason').placeholder = 'e.g., Lunch buffet soup preparation';
+      document.getElementById('op-batch-row').style.display = 'none';
+      stockModal.classList.remove('hidden');
+    });
+
+    // Close Stock Op Modal
+    [document.getElementById('btn-close-stock-op'), document.getElementById('btn-cancel-stock-op')].forEach(btn => {
+      btn.addEventListener('click', () => stockModal.classList.add('hidden'));
+    });
+
+    // Submit Stock Op
+    document.getElementById('stock-op-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const itemId = itemSelect.value;
+      const op = document.getElementById('op-type').value;
+      const qty = parseFloat(document.getElementById('op-quantity').value);
+      const reason = document.getElementById('op-reason').value.trim();
+      const batchNo = document.getElementById('op-batch').value.trim();
+      const expiry = document.getElementById('op-expiry').value;
+
+      if (!itemId || isNaN(qty) || qty <= 0) {
+        alert('Please select an item and valid quantity.');
+        return;
+      }
+
+      try {
+        const res = await apiStockOperation(itemId, op, qty, reason, batchNo, expiry);
+        if (res.success) {
+          showToast(res.message, 'success');
+          stockModal.classList.add('hidden');
+          document.getElementById('stock-op-form').reset();
+          loadDashboardData();
+        }
+      } catch (err) {
+        showToast(err.message || 'Operation failed', 'error');
+      }
+    });
+
+    // Quick Add Supplier
+    document.getElementById('btn-quick-add-supplier').addEventListener('click', () => {
+      supModal.classList.remove('hidden');
+    });
+
+    [document.getElementById('btn-close-supplier'), document.getElementById('btn-cancel-supplier')].forEach(btn => {
+      btn.addEventListener('click', () => supModal.classList.add('hidden'));
+    });
+
+    document.getElementById('supplier-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        name: document.getElementById('sup-name').value.trim(),
+        contactPerson: document.getElementById('sup-contact').value.trim(),
+        phone: document.getElementById('sup-phone').value.trim(),
+        email: document.getElementById('sup-email').value.trim(),
+        address: document.getElementById('sup-address').value.trim(),
+        productsSupplied: document.getElementById('sup-products').value.trim()
+      };
+      try {
+        const res = await apiAddSupplier(data);
+        if (res.success) {
+          showToast('Supplier added successfully', 'success');
+          supModal.classList.add('hidden');
+          document.getElementById('supplier-form').reset();
+        }
+      } catch (err) {
+        showToast(err.message || 'Failed to add supplier', 'error');
+      }
+    });
+
+    loadDashboardData();
+  </script>
+</body>
+</html>

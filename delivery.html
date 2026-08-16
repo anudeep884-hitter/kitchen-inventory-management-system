@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Delivery Logistics &amp; Inbound — Kitchen Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="delivery">
+  <header class="header"></header>
+
+  <div class="container grid">
+    <aside></aside>
+
+    <main>
+      <!-- Top Delivery Header -->
+      <div class="card" style="padding:18px 22px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <h2 style="font-size:20px;font-weight:800;letter-spacing:-0.3px">🚚 Delivery &amp; Inbound Logistics</h2>
+            <div class="small muted">Manage supplier shipments, record arrived stock intake, and track delivery logs</div>
+          </div>
+          <button id="btn-new-delivery" class="btn">📦 Record Inbound Delivery</button>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="stat-grid">
+        <div class="stat stat-blue">
+          <div class="stat-icon-wrapper">🚚</div>
+          <div class="stat-label">In-Transit Shipments</div>
+          <div class="larger" id="stat-in-transit">0</div>
+          <div class="stat-sub">En route to kitchen</div>
+        </div>
+
+        <div class="stat stat-amber">
+          <div class="stat-icon-wrapper">⏳</div>
+          <div class="stat-label">Pending Intake</div>
+          <div class="larger" id="stat-pending">0</div>
+          <div class="stat-sub">Awaiting confirmation</div>
+        </div>
+
+        <div class="stat stat-green">
+          <div class="stat-icon-wrapper">✅</div>
+          <div class="stat-label">Delivered This Week</div>
+          <div class="larger" id="stat-delivered">0</div>
+          <div class="stat-sub">Stock added to inventory</div>
+        </div>
+      </div>
+
+      <!-- Active Shipments Table -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Active Inbound Shipments</div>
+            <div class="card-subtitle">Click "Receive &amp; Intake" to verify quantities and update kitchen stock</div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tracking #</th>
+                <th>Supplier</th>
+                <th>Items in Shipment</th>
+                <th>Expected Date</th>
+                <th>Status</th>
+                <th style="text-align:right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="deliveries-table-body">
+              <tr><td colspan="6" class="small muted text-center" style="padding:24px">Loading shipments...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Inbound Intake Activity History -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Completed Delivery History</div>
+            <div class="card-subtitle">Archive of verified kitchen deliveries</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tracking #</th>
+                <th>Supplier</th>
+                <th>Received Date</th>
+                <th>Status</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="delivered-history-body">
+              <tr><td colspan="5" class="small muted text-center" style="padding:20px">No completed deliveries found</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Record Delivery Modal -->
+  <div id="delivery-modal" class="modal hidden">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Inbound Shipment</h3>
+        <button class="btn-close" id="btn-close-del-modal">&times;</button>
+      </div>
+      <form id="delivery-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="del-supplier">Supplier Name *</label>
+            <select id="del-supplier" class="input" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="del-expected">Expected Arrival Date</label>
+            <input id="del-expected" class="input" type="date" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Shipment Items</label>
+          <div id="delivery-items-rows" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">
+            <div class="form-row item-row">
+              <input class="input del-item-name" placeholder="Item name (e.g. Tomatoes)" required />
+              <input class="input del-item-qty" type="number" step="any" min="0.1" placeholder="Qty" required />
+              <input class="input del-item-unit" placeholder="Unit (kg, L)" required />
+              <input class="input del-item-batch" placeholder="Batch No" />
+            </div>
+          </div>
+          <button type="button" id="btn-add-item-row" class="btn-ghost btn-sm">➕ Add Another Item</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="del-notes">Notes / Delivery Instructions</label>
+          <textarea id="del-notes" class="input" rows="2" placeholder="Cold chain checked, packaging intact..."></textarea>
+        </div>
+
+        <div class="actions-row">
+          <button type="button" class="btn-ghost btn-sm" id="btn-cancel-del-modal">Cancel</button>
+          <button type="submit" class="btn btn-sm">Save Shipment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      requireAuth,
+      renderAppShell,
+      apiGetDeliveries,
+      apiAddDelivery,
+      apiUpdateDelivery,
+      apiGetSuppliers,
+      formatDate,
+      showToast
+    } from './shared.js';
+
+    // Allow Delivery Partner and Admin
+    const user = requireAuth(['delivery', 'admin']);
+    if (!user) { /* redirected */ }
+
+    renderAppShell('delivery');
+
+    let allDeliveries = [];
+    let suppliers = [];
+
+    async function loadDeliveryData() {
+      try {
+        const [delRes, supRes] = await Promise.all([
+          apiGetDeliveries(),
+          apiGetSuppliers()
+        ]);
+
+        if (supRes.success) {
+          suppliers = supRes.suppliers || [];
+          populateSupplierDropdown();
+        }
+
+        if (delRes.success) {
+          allDeliveries = delRes.deliveries || [];
+          renderDeliveries();
+        }
+      } catch (err) {
+        showToast('Error loading deliveries: ' + err.message, 'error');
+      }
+    }
+
+    function renderDeliveries() {
+      const inTransit = allDeliveries.filter(d => d.status === 'IN_TRANSIT').length;
+      const pending = allDeliveries.filter(d => d.status === 'PENDING').length;
+      const delivered = allDeliveries.filter(d => d.status === 'DELIVERED').length;
+
+      document.getElementById('stat-in-transit').textContent = inTransit;
+      document.getElementById('stat-pending').textContent = pending;
+      document.getElementById('stat-delivered').textContent = delivered;
+
+      const activeList = allDeliveries.filter(d => d.status !== 'DELIVERED');
+      const activeTbody = document.getElementById('deliveries-table-body');
+
+      if (!activeList.length) {
+        activeTbody.innerHTML = '<tr><td colspan="6" class="small muted text-center" style="padding:24px">No active inbound shipments. All items received!</td></tr>';
+      } else {
+        activeTbody.innerHTML = activeList.map(del => {
+          const itemsSummary = (del.items || []).map(i => `${i.itemName} (${i.qty} ${i.unit || ''})`).join(', ') || 'General supplies';
+          let statusBadge = '<span class="badge badge-low">In Transit</span>';
+          if (del.status === 'PENDING') statusBadge = '<span class="badge badge-expiring">Pending</span>';
+
+          return `
+            <tr>
+              <td style="font-weight:700">${del.trackingNumber}</td>
+              <td>${del.supplierName}</td>
+              <td class="small">${itemsSummary}</td>
+              <td class="small">${formatDate(del.expectedDate)}</td>
+              <td>${statusBadge}</td>
+              <td style="text-align:right">
+                <button class="btn btn-sm btn-receive-del" data-id="${del.id}">📥 Receive &amp; Intake</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // History table
+      const historyList = allDeliveries.filter(d => d.status === 'DELIVERED');
+      const historyTbody = document.getElementById('delivered-history-body');
+
+      if (!historyList.length) {
+        historyTbody.innerHTML = '<tr><td colspan="5" class="small muted text-center" style="padding:20px">No delivery history</td></tr>';
+      } else {
+        historyTbody.innerHTML = historyList.map(del => `
+          <tr>
+            <td style="font-weight:600">${del.trackingNumber}</td>
+            <td>${del.supplierName}</td>
+            <td class="small">${formatDate(del.receivedDate)}</td>
+            <td><span class="badge badge-available">Delivered</span></td>
+            <td class="small muted">${del.notes || 'Verified & stocked'}</td>
+          </tr>
+        `).join('');
+      }
+
+      // Attach receive action
+      document.querySelectorAll('.btn-receive-del').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          const del = allDeliveries.find(d => d.id === id);
+          if (!del) return;
+          if (confirm(`Confirm receipt for shipment ${del.trackingNumber} from ${del.supplierName}?\nThis will automatically increment the inventory stock.`)) {
+            try {
+              const res = await apiUpdateDelivery(id, {
+                status: 'DELIVERED',
+                receivedDate: new Date().toISOString().slice(0, 10),
+                autoUpdateStock: true
+              });
+              if (res.success) {
+                showToast(`Shipment ${del.trackingNumber} received and inventory updated!`, 'success');
+                loadDeliveryData();
+              }
+            } catch (err) {
+              showToast(err.message || 'Failed to update delivery', 'error');
+            }
+          }
+        });
+      });
+    }
+
+    function populateSupplierDropdown() {
+      const select = document.getElementById('del-supplier');
+      select.innerHTML = '<option value="">-- Choose Supplier --</option>' +
+        suppliers.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+    }
+
+    // Modal logic
+    const modal = document.getElementById('delivery-modal');
+    document.getElementById('btn-new-delivery').addEventListener('click', () => {
+      document.getElementById('del-expected').value = new Date().toISOString().slice(0, 10);
+      modal.classList.remove('hidden');
+    });
+
+    [document.getElementById('btn-close-del-modal'), document.getElementById('btn-cancel-del-modal')].forEach(btn => {
+      btn.addEventListener('click', () => modal.classList.add('hidden'));
+    });
+
+    document.getElementById('btn-add-item-row').addEventListener('click', () => {
+      const container = document.getElementById('delivery-items-rows');
+      const div = document.createElement('div');
+      div.className = 'form-row item-row';
+      div.innerHTML = `
+        <input class="input del-item-name" placeholder="Item name" required />
+        <input class="input del-item-qty" type="number" step="any" min="0.1" placeholder="Qty" required />
+        <input class="input del-item-unit" placeholder="Unit" required />
+        <input class="input del-item-batch" placeholder="Batch No" />
+      `;
+      container.appendChild(div);
+    });
+
+    document.getElementById('delivery-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const supplierName = document.getElementById('del-supplier').value;
+      const expectedDate = document.getElementById('del-expected').value;
+      const notes = document.getElementById('del-notes').value.trim();
+
+      const itemRows = document.querySelectorAll('.item-row');
+      const items = [];
+      itemRows.forEach(row => {
+        const name = row.querySelector('.del-item-name').value.trim();
+        const qty = parseFloat(row.querySelector('.del-item-qty').value) || 0;
+        const unit = row.querySelector('.del-item-unit').value.trim();
+        const batchNo = row.querySelector('.del-item-batch').value.trim();
+        if (name && qty > 0) {
+          items.push({ itemName: name, qty, unit, batchNo });
+        }
+      });
+
+      try {
+        const res = await apiAddDelivery({ supplierName, expectedDate, notes, items });
+        if (res.success) {
+          showToast('Inbound shipment recorded', 'success');
+          modal.classList.add('hidden');
+          document.getElementById('delivery-form').reset();
+          loadDeliveryData();
+        }
+      } catch (err) {
+        showToast(err.message || 'Failed to record shipment', 'error');
+      }
+    });
+
+    loadDeliveryData();
+  </script>
+</body>
+</html>

@@ -1,75 +1,196 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Usage — Kitchen Inventory</title><link rel="stylesheet" href="styles.css"></head><body data-page="usage">
-  <div class="header">
-    <div class="brand"><div class="logo">KI</div><div><h1>Kitchen Inventory</h1><div class="small muted">Usage logs</div></div></div>
-    <div class="controls"><div class="search-bar" style="width:420px;"><input class="input" id="global-search" placeholder="Search items"></div><div class="profile-row" style="gap:8px;margin-left:12px"><div class="avatar" id="header-avatar">DU</div><div class="small muted" id="header-user">Demo</div></div></div>
-  </div>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Usage &amp; Consumption Logs — Kitchen Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="usage">
+  <header class="header"></header>
+
   <div class="container grid">
-    <aside>
-      <nav>
-        <a class="nav-item" data-target="dashboard" href="dashboard.html">🏠 Dashboard</a>
-        <a class="nav-item" data-target="inventory" href="inventory.html">📦 Inventory</a>
-        <a class="nav-item" data-target="forecast" href="forecast.html">📈 Forecast</a>
-        <a class="nav-item active" data-target="usage" href="usage.html">📝 Usage</a>
-        <a class="nav-item" data-target="profile" href="profile.html">👤 Profile</a>
-        <a class="nav-item" data-target="settings" href="settings.html">⚙️ Settings</a>
-      </nav>
-      <hr style="margin:12px 0"/>
-      <div id="chef-actions" style="display:none">
-        <button id="btn-log-usage" class="btn" style="width:100%">Log usage (Chef)</button>
-      </div>
-    </aside>
+    <aside></aside>
+
     <main>
       <div class="card">
-        <h2>Usage Logs</h2>
-        <div class="table-wrap" style="margin-top:12px">
-          <table><thead><tr><th>Item</th><th>Date</th><th>Qty used</th></tr></thead><tbody id="usage-body"></tbody></table>
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Kitchen Usage &amp; Consumption Logs</h2>
+            <div class="card-subtitle">Real-time log of ingredients consumed across meal prep, cooking stations, and service</div>
+          </div>
+          <button id="btn-open-log-modal" class="btn">🍳 Log Consumption</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Ingredient / Item</th>
+                <th>Quantity Consumed</th>
+                <th>Logged By</th>
+                <th>Recipe / Prep Reason</th>
+              </tr>
+            </thead>
+            <tbody id="usage-table-body">
+              <tr><td colspan="5" class="small muted text-center" style="padding:24px">Loading usage records...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </main>
   </div>
 
-<script>
-(function(){
-  const STORAGE_KEY = 'kitchen_inventory_v1_mp_improved';
-  function getState(){ try{ const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : { user: null, items: [] }; }catch(e){ return { user:null, items: [] }; } }
-  function saveState(st){ localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); }
+  <!-- Log Usage Modal -->
+  <div id="usage-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Ingredient Consumption</h3>
+        <button class="btn-close" id="btn-close-usage-modal">&times;</button>
+      </div>
+      <form id="usage-form">
+        <div class="form-group">
+          <label class="form-label" for="usage-item-select">Select Ingredient *</label>
+          <select id="usage-item-select" class="input" required></select>
+        </div>
 
-  const state = getState();
-  document.getElementById('header-user').textContent = state.user?.name || 'Guest';
-  const role = state.user?.role || 'admin';
-  if(role === 'chef' || role === 'admin'){
-    document.getElementById('chef-actions').style.display = 'block';
-  }
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="usage-qty">Quantity Consumed *</label>
+            <input id="usage-qty" class="input" type="number" step="any" min="0.01" required placeholder="e.g. 2" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="usage-unit">Unit</label>
+            <input id="usage-unit" class="input" readonly placeholder="Unit" />
+          </div>
+        </div>
 
-  const tbody = document.getElementById('usage-body');
-  function renderLogs(){
-    tbody.innerHTML = '';
-    const logs = [];
-    (state.items || []).forEach(it=> (it.usageLog||[]).forEach(l=> logs.push({name: it.name, date: l.date, qty: l.qty})));
-    logs.sort((a,b)=> new Date(b.date)-new Date(a.date));
-    logs.forEach(log=> tbody.innerHTML += `<tr><td>${log.name}</td><td>${log.date}</td><td>${log.qty}</td></tr>`);
-  }
+        <div class="form-group">
+          <label class="form-label" for="usage-reason">Recipe / Purpose *</label>
+          <input id="usage-reason" class="input" required placeholder="e.g. Lunch Biryani Prep / Breakfast Buffet" />
+        </div>
 
-  // chef can log usage
-  document.getElementById('btn-log-usage')?.addEventListener('click', ()=>{
-    const item = prompt('Item name to log usage for:');
-    if(!item) return;
-    const qty = prompt('Quantity used:', '1');
-    if(qty===null) return;
-    const q = parseFloat(qty);
-    if(isNaN(q) || q<=0) return alert('Invalid qty');
-    const it = state.items.find(x=> x.name.toLowerCase() === item.toLowerCase());
-    if(!it) return alert('Item not found');
-    it.qty = Number((it.qty - q).toFixed(3));
-    const date = new Date().toISOString().slice(0,10);
-    it.usageLog = it.usageLog||[];
-    it.usageLog.push({date: date, qty: q});
-    saveState(state);
-    renderLogs();
-  });
+        <div class="actions-row">
+          <button type="button" class="btn-ghost btn-sm" id="btn-cancel-usage-modal">Cancel</button>
+          <button type="submit" class="btn btn-sm">Confirm Usage</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-  renderLogs();
-})();
-</script>
-</body></html>
+  <script type="module">
+    import {
+      requireAuth,
+      renderAppShell,
+      apiGetTransactions,
+      apiGetInventory,
+      apiStockOperation,
+      formatDate,
+      showToast
+    } from './shared.js';
+
+    const user = requireAuth(['admin', 'chef', 'delivery']);
+    if (!user) { /* redirected */ }
+
+    renderAppShell('usage');
+
+    let inventory = [];
+
+    async function loadUsageData() {
+      try {
+        const [txRes, invRes] = await Promise.all([
+          apiGetTransactions({ operation: 'USE_STOCK' }),
+          apiGetInventory()
+        ]);
+
+        if (invRes.success) {
+          inventory = invRes.items || [];
+          populateItemSelect();
+        }
+
+        if (txRes.success) {
+          renderUsageTable(txRes.transactions || []);
+        }
+      } catch (err) {
+        showToast('Error loading usage data: ' + err.message, 'error');
+      }
+    }
+
+    function renderUsageTable(txs) {
+      const tbody = document.getElementById('usage-table-body');
+      if (!txs.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="small muted text-center" style="padding:24px">No ingredient consumption logs found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = txs.map(t => `
+        <tr>
+          <td class="small muted">${formatDate(t.timestamp)}</td>
+          <td style="font-weight:700">${t.itemName}</td>
+          <td style="font-weight:800;color:#ea580c">-${t.quantity} ${t.unit || ''}</td>
+          <td>
+            <div style="font-weight:600;font-size:13px">${t.userName || 'Staff'}</div>
+            <div class="small muted">${(t.userRole || 'User').toUpperCase()}</div>
+          </td>
+          <td class="small">${t.reason || 'General Kitchen Consumption'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function populateItemSelect() {
+      const select = document.getElementById('usage-item-select');
+      select.innerHTML = '<option value="">-- Choose Ingredient --</option>' +
+        inventory.map(i => `<option value="${i.id}" data-unit="${i.unit}" data-qty="${i.qty}">${i.name} (${i.qty} ${i.unit} in stock)</option>`).join('');
+    }
+
+    const modal = document.getElementById('usage-modal');
+    const itemSelect = document.getElementById('usage-item-select');
+    const unitInput = document.getElementById('usage-unit');
+
+    itemSelect.addEventListener('change', () => {
+      const selected = itemSelect.selectedOptions[0];
+      if (selected && selected.dataset.unit) {
+        unitInput.value = selected.dataset.unit;
+      } else {
+        unitInput.value = '';
+      }
+    });
+
+    document.getElementById('btn-open-log-modal').addEventListener('click', () => {
+      document.getElementById('usage-form').reset();
+      unitInput.value = '';
+      modal.classList.remove('hidden');
+    });
+
+    [document.getElementById('btn-close-usage-modal'), document.getElementById('btn-cancel-usage-modal')].forEach(btn => {
+      btn.addEventListener('click', () => modal.classList.add('hidden'));
+    });
+
+    document.getElementById('usage-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const itemId = itemSelect.value;
+      const qty = parseFloat(document.getElementById('usage-qty').value);
+      const reason = document.getElementById('usage-reason').value.trim();
+
+      if (!itemId || isNaN(qty) || qty <= 0) {
+        alert('Please select an ingredient and enter a valid quantity.');
+        return;
+      }
+
+      try {
+        const res = await apiStockOperation(itemId, 'USE_STOCK', qty, reason);
+        if (res.success) {
+          showToast(`Logged usage of ${qty} ${unitInput.value}`, 'success');
+          modal.classList.add('hidden');
+          loadUsageData();
+        }
+      } catch (err) {
+        showToast(err.message || 'Failed to log usage', 'error');
+      }
+    });
+
+    loadUsageData();
+  </script>
+</body>
+</html>

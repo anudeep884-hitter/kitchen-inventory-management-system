@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>User Management — Kitchen Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="users">
+  <header class="header"></header>
+
+  <div class="container grid">
+    <aside></aside>
+
+    <main>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">User &amp; Staff Management</h2>
+            <div class="card-subtitle">Manage kitchen accounts, role-based access control, and user statuses</div>
+          </div>
+          <button id="btn-add-user" class="btn">➕ Create New User</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User / Staff</th>
+                <th>Role</th>
+                <th>Contact</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body">
+              <tr><td colspan="6" class="small muted text-center" style="padding:24px">Loading users...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add/Edit User Modal -->
+  <div id="user-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="user-modal-title">Create User Account</h3>
+        <button class="btn-close" id="btn-close-user-modal">&times;</button>
+      </div>
+      <form id="user-form">
+        <input type="hidden" id="form-user-id" />
+
+        <div class="form-group">
+          <label class="form-label" for="form-user-name">Full Name *</label>
+          <input id="form-user-name" class="input" required placeholder="e.g. Ramesh Kumar" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="form-user-email">Email Address *</label>
+          <input id="form-user-email" class="input" type="email" required placeholder="ramesh@kitchen.com" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="form-user-role">Assigned Role *</label>
+            <select id="form-user-role" class="input" required>
+              <option value="admin">Administrator (Full Access)</option>
+              <option value="chef">Chef (Pantry &amp; Prep Usage)</option>
+              <option value="delivery">Delivery Partner (Inbound Stock)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="form-user-status">Account Status</label>
+            <select id="form-user-status" class="input">
+              <option value="active">Active</option>
+              <option value="disabled">Disabled (Deactivated)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="form-user-phone">Phone Number</label>
+            <input id="form-user-phone" class="input" placeholder="+91 90000 00000" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="form-user-location">Location / Station</label>
+            <input id="form-user-location" class="input" placeholder="Main Kitchen" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="form-user-password">Password (Optional for edit)</label>
+          <input id="form-user-password" class="input" type="password" placeholder="••••••••" minlength="6" />
+          <div class="form-hint">Default password is "password123" if left blank.</div>
+        </div>
+
+        <div class="actions-row">
+          <button type="button" class="btn-ghost btn-sm" id="btn-cancel-user-modal">Cancel</button>
+          <button type="submit" class="btn btn-sm">Save User Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      requireAuth,
+      renderAppShell,
+      apiGetUsers,
+      apiAddUser,
+      apiUpdateUser,
+      apiDeleteUser,
+      formatRoleBadge,
+      formatDate,
+      showToast
+    } from './shared.js';
+
+    // Strictly Admin only
+    const user = requireAuth(['admin']);
+    if (!user) { /* redirected */ }
+
+    renderAppShell('users');
+
+    let allUsers = [];
+
+    async function loadUsers() {
+      try {
+        const res = await apiGetUsers();
+        if (res.success) {
+          allUsers = res.users || [];
+          renderUsers();
+        }
+      } catch (err) {
+        showToast('Error loading users: ' + err.message, 'error');
+      }
+    }
+
+    function renderUsers() {
+      const tbody = document.getElementById('users-table-body');
+      if (!allUsers.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="small muted text-center" style="padding:24px">No users found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = allUsers.map(u => {
+        const initials = u.name ? u.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : 'U';
+        const isSelf = u.id === user.id;
+        const statusBadge = u.status === 'disabled'
+          ? '<span class="badge badge-expired">Disabled</span>'
+          : '<span class="badge badge-available">Active</span>';
+
+        return `
+          <tr>
+            <td>
+              <div class="profile-row" style="background:transparent;border:none;padding:0;cursor:default">
+                <div class="avatar">${initials}</div>
+                <div>
+                  <div style="font-weight:700">${u.name} ${isSelf ? '<span class="badge badge-safe">You</span>' : ''}</div>
+                  <div class="small muted">${u.email}</div>
+                </div>
+              </div>
+            </td>
+            <td>${formatRoleBadge(u.role)}</td>
+            <td>
+              <div class="small">${u.phone || '—'}</div>
+              <div class="small muted">${u.location || 'Kitchen'}</div>
+            </td>
+            <td>${statusBadge}</td>
+            <td class="small muted">${formatDate(u.joined)}</td>
+            <td style="text-align:right">
+              <div class="btn-group" style="justify-content:flex-end">
+                <button class="btn-ghost btn-sm btn-edit-user" data-id="${u.id}">✏️ Edit</button>
+                ${!isSelf ? `<button class="btn-ghost btn-sm btn-del-user" data-id="${u.id}" style="color:#ef4444">🗑️</button>` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.btn-edit-user').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const u = allUsers.find(x => x.id === btn.dataset.id);
+          if (u) openModal(u);
+        });
+      });
+
+      document.querySelectorAll('.btn-del-user').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const u = allUsers.find(x => x.id === btn.dataset.id);
+          if (!u) return;
+          if (confirm(`Are you sure you want to delete user account "${u.name}" (${u.email})?`)) {
+            try {
+              const res = await apiDeleteUser(u.id);
+              if (res.success) {
+                showToast('User deleted', 'success');
+                loadUsers();
+              }
+            } catch (err) {
+              showToast(err.message || 'Failed to delete user', 'error');
+            }
+          }
+        });
+      });
+    }
+
+    // Modal logic
+    const modal = document.getElementById('user-modal');
+    function openModal(u) {
+      document.getElementById('user-form').reset();
+      if (u) {
+        document.getElementById('user-modal-title').textContent = `Edit User: ${u.name}`;
+        document.getElementById('form-user-id').value = u.id;
+        document.getElementById('form-user-name').value = u.name;
+        document.getElementById('form-user-email').value = u.email;
+        document.getElementById('form-user-role').value = u.role;
+        document.getElementById('form-user-status').value = u.status || 'active';
+        document.getElementById('form-user-phone').value = u.phone || '';
+        document.getElementById('form-user-location').value = u.location || '';
+      } else {
+        document.getElementById('user-modal-title').textContent = '➕ Create New User';
+        document.getElementById('form-user-id').value = '';
+        document.getElementById('form-user-status').value = 'active';
+      }
+      modal.classList.remove('hidden');
+    }
+
+    document.getElementById('btn-add-user').addEventListener('click', () => openModal(null));
+
+    [document.getElementById('btn-close-user-modal'), document.getElementById('btn-cancel-user-modal')].forEach(btn => {
+      btn.addEventListener('click', () => modal.classList.add('hidden'));
+    });
+
+    document.getElementById('user-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('form-user-id').value;
+      const data = {
+        name: document.getElementById('form-user-name').value.trim(),
+        email: document.getElementById('form-user-email').value.trim(),
+        role: document.getElementById('form-user-role').value,
+        status: document.getElementById('form-user-status').value,
+        phone: document.getElementById('form-user-phone').value.trim(),
+        location: document.getElementById('form-user-location').value.trim(),
+        password: document.getElementById('form-user-password').value
+      };
+
+      try {
+        if (id) {
+          const res = await apiUpdateUser(id, data);
+          if (res.success) {
+            showToast('User updated successfully', 'success');
+            modal.classList.add('hidden');
+            loadUsers();
+          }
+        } else {
+          const res = await apiAddUser(data);
+          if (res.success) {
+            showToast('User created successfully', 'success');
+            modal.classList.add('hidden');
+            loadUsers();
+          }
+        }
+      } catch (err) {
+        showToast(err.message || 'Error saving user', 'error');
+      }
+    });
+
+    loadUsers();
+  </script>
+</body>
+</html>

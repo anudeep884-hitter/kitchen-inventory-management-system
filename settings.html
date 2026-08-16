@@ -1,148 +1,189 @@
-
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Settings — Kitchen Inventory</title><link rel="stylesheet" href="styles.css"></head>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Settings — Kitchen Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
 <body data-page="settings">
-  <div class="header">
-    <div class="brand"><div class="logo">KI</div><div><h1>Kitchen Inventory</h1><div class="small muted">Settings</div></div></div>
-    <div class="controls"><div class="search-bar" style="width:420px;"><input class="input" id="global-search" placeholder="Search items"></div><div class="profile-row" style="gap:8px;margin-left:12px"><div class="avatar" id="header-avatar">DU</div><div class="small muted" id="header-user">Demo</div></div></div>
-  </div>
+  <header class="header"></header>
 
   <div class="container grid">
-    <aside>
-      <nav>
-        <a class="nav-item" data-target="dashboard" href="dashboard.html">🏠 Dashboard</a>
-        <a class="nav-item" data-target="inventory" href="inventory.html">📦 Inventory</a>
-        <a class="nav-item" data-target="forecast" href="forecast.html">📈 Forecast</a>
-        <a class="nav-item" data-target="usage" href="usage.html">📝 Usage</a>
-        <a class="nav-item" data-target="profile" href="profile.html">👤 Profile</a>
-        <a class="nav-item active" data-target="settings" href="settings.html">⚙️ Settings</a>
-      </nav>
-      <div style="margin-top:12px" class="small muted">Account & app settings</div>
-    </aside>
+    <aside></aside>
 
     <main>
+      <!-- Security & Password Change Card -->
       <div class="card">
-        
-        <h2>Account</h2>
-        <div style="margin-top:12px;max-width:480px">
-          <label class="small">Name</label>
-          <input id="setting-name" class="input" placeholder="Your name" />
-
-          <div style="margin-top:12px">
-            <label class="small">Email (readonly)</label>
-            <input id="setting-email" class="input" readonly />
-          </div>
-
-          <div style="margin-top:12px">
-            <label class="small">New Password (optional)</label>
-            <input id="setting-password" class="input" type="password" placeholder="Enter new password" />
-          </div>
-
-          <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
-            <button id="btn-save-account" class="btn">Save</button>
-            <button id="btn-logout" class="btn-ghost">Logout</button>
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Security &amp; Password</h2>
+            <div class="card-subtitle">Update your account password with bcrypt encryption</div>
           </div>
         </div>
 
-        <h3>App settings</h3>
-        <div style="margin-top:12px">
-          <label class="small">Notifications</label>
-          <div><label><input type="checkbox" id="setting-notifications" /> Enable notifications (dashboard alerts)</label></div>
-
-          <div style="margin-top:12px">
-            <label class="small">Items per page</label>
-            <select id="setting-items-per-page" class="input">
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="30">30</option>
-            </select>
+        <form id="password-change-form" style="max-width:460px">
+          <div class="form-group">
+            <label class="form-label" for="current-pwd">Current Password *</label>
+            <input id="current-pwd" class="input" type="password" required placeholder="••••••••" />
           </div>
 
-          <div style="margin-top:12px">
-            <label class="small">Theme</label>
-            <select id="setting-theme" class="input">
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
+          <div class="form-group">
+            <label class="form-label" for="new-pwd">New Password *</label>
+            <input id="new-pwd" class="input" type="password" required minlength="6" placeholder="•••••••• (min 6 characters)" />
           </div>
 
-          <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
-            <button id="btn-save-settings" class="btn">Save settings</button>
-            <button id="btn-reset-data" class="btn-ghost">Reset demo data</button>
+          <div class="form-group">
+            <label class="form-label" for="confirm-pwd">Confirm New Password *</label>
+            <input id="confirm-pwd" class="input" type="password" required minlength="6" placeholder="••••••••" />
+          </div>
+
+          <div class="actions-row" style="justify-content:flex-start">
+            <button type="submit" class="btn btn-sm">Update Password</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- App Preferences Card -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Application Preferences</h2>
+            <div class="card-subtitle">Configure notification triggers and display options</div>
           </div>
         </div>
 
+        <div style="max-width:520px">
+          <div class="form-group">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600">
+              <input type="checkbox" id="setting-notifs-toggle" checked />
+              Enable In-App Expiry &amp; Low Stock Notifications
+            </label>
+            <div class="form-hint">Shows alert badges and top bell notifications for items requiring attention.</div>
+          </div>
+
+          <div class="form-row" style="margin-top:16px">
+            <div class="form-group">
+              <label class="form-label">Expiry Warning Window</label>
+              <select id="setting-expiry-days" class="input">
+                <option value="2">2 Days before expiry</option>
+                <option value="3" selected>3 Days before expiry (Recommended)</option>
+                <option value="5">5 Days before expiry</option>
+                <option value="7">7 Days before expiry</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Default Table Rows</label>
+              <select id="setting-page-rows" class="input">
+                <option value="15">15 rows per page</option>
+                <option value="25" selected>25 rows per page</option>
+                <option value="50">50 rows per page</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="actions-row" style="justify-content:flex-start">
+            <button id="btn-save-preferences" class="btn btn-sm">Save Preferences</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Maintenance Card (Admin Only) -->
+      <div class="card" id="admin-maintenance-card" style="border-left:4px solid #ef4444">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title" style="color:#dc2626">System Maintenance &amp; Factory Reset</h2>
+            <div class="card-subtitle">Admin controls for resetting demo database data</div>
+          </div>
+        </div>
+
+        <p class="small muted" style="margin-bottom:14px">
+          Resetting demo data re-seeds the database with default realistic users (Admin, Chef, Delivery), 30 pantry items, suppliers, transactions, and notification alerts.
+        </p>
+
+        <button id="btn-reset-demo-db" class="btn-danger btn-sm">🔄 Reset Demo Database</button>
       </div>
     </main>
   </div>
 
-<script type="module">
-import('./shared.js').then(mod=>{
-  mod.ensureData();
-  const st = mod.state;
-  mod.activateNav();
-  const user = st.user || {};
-  document.getElementById('header-user').textContent = user.name || 'Demo';
+  <script type="module">
+    import {
+      requireAuth,
+      renderAppShell,
+      apiChangePassword,
+      logout,
+      showToast
+    } from './shared.js';
 
-  // populate account fields
-  document.getElementById('setting-name').value = user.name || '';
-  document.getElementById('setting-email').value = user.email || '';
-  document.getElementById('setting-phone').value = user.phone || '';
-  document.getElementById('setting-location').value = user.location || '';
+    const user = requireAuth();
+    if (!user) { /* redirected */ }
 
-  // populate app settings
-  const s = st.settings || { notifications: true, itemsPerPage: 20, theme: 'light' };
-  document.getElementById('setting-notifications').checked = !!s.notifications;
-  document.getElementById('setting-items-per-page').value = String(s.itemsPerPage || 20);
-  document.getElementById('setting-theme').value = s.theme || 'light';
+    renderAppShell('settings');
 
-  // save account changes
-  document.getElementById('btn-save-account').addEventListener('click', ()=>{
-    const name = document.getElementById('setting-name').value.trim();
-    const phone = document.getElementById('setting-phone').value.trim();
-    const location = document.getElementById('setting-location').value.trim();
-    const password = document.getElementById('setting-password').value;
-
-    st.user = st.user || {};
-    st.user.name = name || st.user.name || '';
-    // email is read-only
-    if(phone) st.user.phone = phone;
-    if(location) st.user.location = location;
-    if(password) st.user.password = password; // demo-only local password storage
-    mod.saveState();
-    alert('Account updated (saved locally).');
-    // clear password input after save
-    document.getElementById('setting-password').value = '';
-    document.getElementById('header-user').textContent = st.user.name || '';
-  });
-
-  // logout: clear current user and redirect to login
-  document.getElementById('btn-logout').addEventListener('click', ()=>{
-    if(!confirm('Logout? This will clear the current signed-in user from localStorage.')) return;
-    const data = st;
-    data.user = null;
-    mod.saveState();
-    window.location = 'index.html';
-  });
-
-  // app settings save
-  document.getElementById('btn-save-settings').addEventListener('click', ()=>{
-    st.settings = {
-      notifications: document.getElementById('setting-notifications').checked,
-      itemsPerPage: parseInt(document.getElementById('setting-items-per-page').value,10),
-      theme: document.getElementById('setting-theme').value
-    };
-    mod.saveState();
-    alert('Settings saved.');
-  });
-
-  document.getElementById('btn-reset-data').addEventListener('click', ()=>{
-    if(confirm('Reset demo data? This clears localStorage.')){
-      localStorage.removeItem("kitchen_inventory_v1_mp_improved");
-      mod.seedDemo && mod.seedDemo();
-      alert('Reset done. Reload the page.');
+    if (user.role !== 'admin') {
+      const maintCard = document.getElementById('admin-maintenance-card');
+      if (maintCard) maintCard.style.display = 'none';
     }
-  });
-});
-</script>
-</body></html>
+
+    // Password form
+    document.getElementById('password-change-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const current = document.getElementById('current-pwd').value;
+      const newPwd = document.getElementById('new-pwd').value;
+      const confirmPwd = document.getElementById('confirm-pwd').value;
+
+      if (newPwd !== confirmPwd) {
+        showToast('New passwords do not match', 'error');
+        return;
+      }
+
+      try {
+        const res = await apiChangePassword(current, newPwd);
+        if (res.success) {
+          showToast('Password changed successfully', 'success');
+          document.getElementById('password-change-form').reset();
+        }
+      } catch (err) {
+        showToast(err.message || 'Failed to change password', 'error');
+      }
+    });
+
+    // Preferences
+    document.getElementById('btn-save-preferences').addEventListener('click', () => {
+      const prefs = {
+        notifications: document.getElementById('setting-notifs-toggle').checked,
+        expiryDays: document.getElementById('setting-expiry-days').value,
+        pageRows: document.getElementById('setting-page-rows').value
+      };
+      localStorage.setItem('kitchen_inventory_prefs', JSON.stringify(prefs));
+      showToast('Preferences saved', 'success');
+    });
+
+    // Demo reset
+    document.getElementById('btn-reset-demo-db')?.addEventListener('click', async () => {
+      if (confirm('⚠️ WARNING: This will reset all inventory items, users, and audit logs to original factory demo data. Continue?')) {
+        try {
+          const token = localStorage.getItem('kitchen_inventory_auth_token');
+          const res = await fetch('/api/settings/reset-demo', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert('Demo data has been reset to factory defaults. The page will reload.');
+            window.location = 'dashboard.html';
+          } else {
+            showToast(data.message || 'Reset failed', 'error');
+          }
+        } catch (err) {
+          showToast('Error resetting database: ' + err.message, 'error');
+        }
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,246 +1,628 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Inventory — Kitchen Inventory</title><link rel="stylesheet" href="styles.css"></head>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inventory Management — Kitchen Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
 <body data-page="inventory">
-  <div class="header">
-    <div class="brand"><div class="logo">KI</div><div><h1>Kitchen Inventory</h1><div class="small muted">Manage pantry</div></div></div>
-    <div class="controls"><div class="search-bar" style="width:420px;"><input class="input" id="global-search" placeholder="Search items"></div><div class="profile-row" style="gap:8px;margin-left:12px"><div class="avatar" id="header-avatar">DU</div><div class="small muted" id="header-user">Demo</div></div></div>
-  </div>
+  <header class="header"></header>
 
-  <!-- Grid container: aside (left) + main (right) -->
-  <div class="container grid" style="align-items:start;gap:20px">
-    <aside>
-      <nav>
-        <a class="nav-item" data-target="dashboard" href="dashboard.html">🏠 Dashboard</a>
-        <a class="nav-item active" data-target="inventory" href="inventory.html">📦 Inventory</a>
-        <a class="nav-item" data-target="forecast" href="forecast.html">📈 Forecast</a>
-        <a class="nav-item" data-target="usage" href="usage.html">📝 Usage</a>
-        <a class="nav-item" data-target="profile" href="profile.html">👤 Profile</a>
-        <a class="nav-item" data-target="settings" href="settings.html">⚙️ Settings</a>
-      </nav>
-      <hr style="margin:12px 0"/>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <button id="btn-new-item-left" class="btn" style="width:100%">+ New item</button>
-        <button id="btn-add-stock-left" class="btn-ghost" style="width:100%;display:none">+ Add stock</button>
-      </div>
-    </aside>
+  <div class="container grid">
+    <aside></aside>
 
     <main>
       <div class="card">
-        <h2>Inventory</h2>
-
-        <!-- Controls (top of table) -->
-        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <input id="search" class="input" placeholder="Search inventory..." style="min-width:220px">
-            <div style="min-width:180px">
-              <select id="filter-category" class="input"><option value="">All categories</option></select>
-            </div>
-            <div style="min-width:180px">
-              <select id="filter-expiry" class="input">
-                <option value="">All expiry</option>
-                <option value="expiring-7">Expiring in 7 days</option>
-                <option value="expired">Expired</option>
-                <option value="no-expiry">No expiry</option>
-              </select>
-            </div>
-            <div style="min-width:180px">
-              <select id="sort-select" class="input">
-                <option value="">Sort (default)</option>
-                <option value="qty-asc">Qty ↑</option>
-                <option value="qty-desc">Qty ↓</option>
-              </select>
-            </div>
+        <!-- Top Title & Action Header -->
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Inventory Management</h2>
+            <div class="card-subtitle">Track pantry stock levels, expiry dates, locations, and perform stock intake/usage</div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <button id="btn-new-item-top" class="btn">+ New item</button>
+          <div class="btn-group">
+            <button id="btn-open-add-item" class="btn">➕ New Inventory Item</button>
           </div>
         </div>
 
-        <div class="table-wrap" style="margin-top:12px;overflow:auto">
-          <table style="min-width:820px">
-            <thead><tr><th></th><th>Name</th><th>Qty</th><th>Unit</th><th>Category</th><th>Expiry</th><th>Last Used</th><th>Actions</th></tr></thead>
-            <tbody id="inventory-table-body"></tbody>
+        <!-- Advanced Search & Multi-Filters Toolbar -->
+        <div style="background:#f8fafc;padding:14px;border-radius:12px;border:1px solid var(--border);margin-bottom:16px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:10px;margin-bottom:10px">
+            <!-- Search Text -->
+            <div>
+              <label class="form-label" style="font-size:11px">Search</label>
+              <input id="inv-search-input" class="input" placeholder="Name, batch, supplier..." />
+            </div>
+
+            <!-- Category Filter -->
+            <div>
+              <label class="form-label" style="font-size:11px">Category</label>
+              <select id="inv-filter-category" class="input">
+                <option value="">All Categories</option>
+              </select>
+            </div>
+
+            <!-- Stock Status Filter -->
+            <div>
+              <label class="form-label" style="font-size:11px">Stock Status</label>
+              <select id="inv-filter-status" class="input">
+                <option value="">All Statuses</option>
+                <option value="AVAILABLE">Available</option>
+                <option value="LOW_STOCK">Low Stock</option>
+                <option value="EXPIRING_SOON">Expiring Soon</option>
+                <option value="EXPIRED">Expired</option>
+              </select>
+            </div>
+
+            <!-- Storage Location Filter -->
+            <div>
+              <label class="form-label" style="font-size:11px">Storage Location</label>
+              <select id="inv-filter-location" class="input">
+                <option value="">All Locations</option>
+              </select>
+            </div>
+
+            <!-- Supplier Filter -->
+            <div>
+              <label class="form-label" style="font-size:11px">Supplier</label>
+              <select id="inv-filter-supplier" class="input">
+                <option value="">All Suppliers</option>
+              </select>
+            </div>
+
+            <!-- Sort By -->
+            <div>
+              <label class="form-label" style="font-size:11px">Sort Order</label>
+              <select id="inv-sort-select" class="input">
+                <option value="">Default (Order)</option>
+                <option value="name-asc">Name (A &rarr; Z)</option>
+                <option value="name-desc">Name (Z &rarr; A)</option>
+                <option value="qty-asc">Quantity (Low &rarr; High)</option>
+                <option value="qty-desc">Quantity (High &rarr; Low)</option>
+                <option value="expiry-asc">Expiry (Earliest First)</option>
+                <option value="price-desc">Valuation / Price &darr;</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <div class="small muted" id="inv-count-label">Showing 0 items</div>
+            <button id="btn-reset-filters" class="btn-ghost btn-sm">Reset Filters</button>
+          </div>
+        </div>
+
+        <!-- Inventory Data Table -->
+        <div class="table-wrap">
+          <table style="min-width:960px">
+            <thead>
+              <tr>
+                <th style="width:48px">Item</th>
+                <th>Name &amp; Category</th>
+                <th>Current Qty</th>
+                <th>Stock Limits</th>
+                <th>Status</th>
+                <th>Expiry</th>
+                <th>Location</th>
+                <th>Unit Price</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-table-body">
+              <tr><td colspan="9" class="small muted text-center" style="padding:24px">Loading inventory items...</td></tr>
+            </tbody>
           </table>
         </div>
       </div>
     </main>
   </div>
 
-  <!-- Modal (hidden by default) -->
-  <div id="modal-overlay" class="modal hidden"><div class="modal-card"><h3 id="modal-title">New Item</h3>
-    <label>Name</label><input id="item-name" class="input"/>
-    <label>Quantity</label><input id="item-qty" class="input" type="number"/>
-    <label>Unit</label><input id="item-unit" class="input"/>
-    <label>Category</label><input id="item-category" class="input"/>
-    <label>Expiry</label><input id="item-expiry" class="input" type="date"/>
-    <div class="actions-row"><button id="modal-save" class="btn">Save</button><button id="modal-cancel" class="btn-ghost">Cancel</button></div>
-  </div></div>
+  <!-- Add / Edit Item Modal -->
+  <div id="item-modal" class="modal hidden">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header">
+        <h3 class="modal-title" id="item-modal-title">New Inventory Item</h3>
+        <button class="btn-close" id="btn-close-item-modal">&times;</button>
+      </div>
+      <form id="item-form">
+        <input type="hidden" id="form-item-id" />
 
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="form-name">Item Name *</label>
+            <input id="form-name" class="input" required placeholder="e.g. Basmati Rice" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="form-category">Category *</label>
+            <input id="form-category" class="input" required placeholder="e.g. Grain, Dairy, Spice" list="cat-suggestions" />
+            <datalist id="cat-suggestions">
+              <option value="Vegetable">
+              <option value="Fruit">
+              <option value="Dairy">
+              <option value="Meat">
+              <option value="Seafood">
+              <option value="Grain">
+              <option value="Spice">
+              <option value="Baking">
+              <option value="Cooking">
+              <option value="Condiment">
+              <option value="Beverage">
+              <option value="Pantry">
+            </datalist>
+          </div>
+        </div>
 
-<script type="module">
-import('./shared.js').then(mod=>{
-  // Ensure data exists. If existing localStorage has very few items, re-seed to show full demo inventory.
-  mod.ensureData();
-  // If state.items is missing or unusually small, run seedDemo to repopulate demo items.
-  try {
-    const count = (mod.state && Array.isArray(mod.state.items)) ? mod.state.items.length : 0;
-    if(count < 30 && typeof mod.seedDemo === 'function'){
-      console.log('Seeding demo data because item count was', count);
-      mod.seedDemo();
-      // reload state after seeding
-      mod.loadState && mod.loadState();
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="form-qty">Initial Quantity *</label>
+            <input id="form-qty" class="input" type="number" step="any" min="0" required placeholder="10" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="form-unit">Unit *</label>
+            <input id="form-unit" class="input" required placeholder="e.g. kg, L, pcs, g, pack" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="form-price">Purchase Price (₹) *</label>
+            <input id="form-price" class="input" type="number" step="any" min="0" required placeholder="e.g. 120" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="form-min-stock">Min Stock Level (Alert Threshold) *</label>
+            <input id="form-min-stock" class="input" type="number" step="any" min="0" required placeholder="5" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="form-max-stock">Max Stock Level</label>
+            <input id="form-max-stock" class="input" type="number" step="any" min="0" placeholder="50" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="form-expiry">Expiry Date</label>
+            <input id="form-expiry" class="input" type="date" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="form-purchase-date">Purchase Date</label>
+            <input id="form-purchase-date" class="input" type="date" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="form-location">Storage Location</label>
+            <input id="form-location" class="input" placeholder="e.g. Cold Room A, Refrigerator 1, Dry Storage" list="loc-suggestions" />
+            <datalist id="loc-suggestions">
+              <option value="Dry Storage Bay 1">
+              <option value="Dry Storage Bay 2">
+              <option value="Dry Storage Bay 3">
+              <option value="Cold Room A">
+              <option value="Cold Room B">
+              <option value="Refrigerator 1">
+              <option value="Refrigerator 2">
+              <option value="Freezer A">
+              <option value="Freezer B">
+              <option value="Spice Rack A">
+              <option value="Spice Safe">
+            </datalist>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="form-supplier">Supplier</label>
+            <input id="form-supplier" class="input" placeholder="e.g. Fresh Valley Farms" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="form-batch">Batch Number</label>
+            <input id="form-batch" class="input" placeholder="e.g. BAT-2026-001" />
+          </div>
+        </div>
+
+        <div class="actions-row">
+          <button type="button" class="btn-ghost btn-sm" id="btn-cancel-item-modal">Cancel</button>
+          <button type="submit" class="btn btn-sm" id="btn-save-item">Save Inventory Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Dedicated Stock Operation Modal (Add, Use, Restock, Damaged) -->
+  <div id="stock-op-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="stock-op-title">Stock Operation</h3>
+        <button class="btn-close" id="btn-close-stock-op">&times;</button>
+      </div>
+      <form id="stock-op-form">
+        <input type="hidden" id="stock-op-item-id" />
+        <input type="hidden" id="stock-op-type" />
+
+        <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:14px;border:1px solid var(--border)">
+          <div style="font-weight:700" id="stock-op-item-name">Item Name</div>
+          <div class="small muted" id="stock-op-item-current">Current Stock: 0 pcs</div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="stock-op-qty">Quantity *</label>
+            <input id="stock-op-qty" class="input" type="number" step="any" min="0.01" required placeholder="1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="stock-op-unit">Unit</label>
+            <input id="stock-op-unit" class="input" readonly />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="stock-op-reason">Reason / Purpose *</label>
+          <input id="stock-op-reason" class="input" required placeholder="e.g. Breakfast omelette prep / Vendor arrival" />
+        </div>
+
+        <div class="form-row" id="stock-op-extra-row">
+          <div class="form-group">
+            <label class="form-label" for="stock-op-batch">Batch Number (Optional)</label>
+            <input id="stock-op-batch" class="input" placeholder="e.g. BAT-2026-99" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="stock-op-expiry">Expiry Date (Optional)</label>
+            <input id="stock-op-expiry" class="input" type="date" />
+          </div>
+        </div>
+
+        <div class="actions-row">
+          <button type="button" class="btn-ghost btn-sm" id="btn-cancel-stock-op">Cancel</button>
+          <button type="submit" class="btn btn-sm" id="btn-submit-stock-op">Confirm Stock Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      requireAuth,
+      renderAppShell,
+      apiGetInventory,
+      apiAddInventory,
+      apiUpdateInventory,
+      apiDeleteInventory,
+      apiStockOperation,
+      formatStatusBadge,
+      formatCurrency,
+      formatDate,
+      showToast,
+      showItemQRModal
+    } from './shared.js';
+
+    // Allow Admin, Chef, Delivery to access inventory (with role-restricted action buttons)
+    const user = requireAuth(['admin', 'chef', 'delivery']);
+    if (!user) { /* redirected */ }
+
+    renderAppShell('inventory');
+
+    let allItems = [];
+
+    // Check URL parameters for search or new item trigger
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('search')) {
+      document.getElementById('inv-search-input').value = urlParams.get('search');
     }
-  } catch(e){
-    console.warn('Seeding check error', e);
-  }
 
-  const st = mod.state;
-  mod.activateNav();
-  document.getElementById('header-user').textContent = st.user?.name || 'Demo';
+    async function loadInventory() {
+      try {
+        const res = await apiGetInventory();
+        if (res.success) {
+          allItems = res.items || [];
+          populateFilterDropdowns();
+          applyFiltersAndRender();
 
-  const tbody = document.getElementById('inventory-table-body');
-  const catSelect = document.getElementById('filter-category');
-  const expirySelect = document.getElementById('filter-expiry');
-  const sortSelect = document.getElementById('sort-select');
-  const searchInput = document.getElementById('search');
-  const btnNewTop = document.getElementById('btn-new-item-top');
-  const btnNewLeft = document.getElementById('btn-new-item-left');
-  const btnAddLeft = document.getElementById('btn-add-stock-left');
-
-  function populateCategories(){
-    if(!catSelect) return;
-    const cats = Array.from(new Set((st.items||[]).map(i=>i.category).filter(Boolean))).sort();
-    catSelect.innerHTML = '<option value="">All categories</option>' + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
-  }
-
-  function applyFiltersAndSort(items){
-    const q = (searchInput?.value || '').trim().toLowerCase();
-    const cat = catSelect?.value || '';
-    const expiryFilter = expirySelect?.value || '';
-    let filtered = (items || []).filter(it => {
-      if(q && !(it.name || '').toLowerCase().includes(q)) return false;
-      if(cat && it.category !== cat) return false;
-      if(expiryFilter === 'expiring-7'){
-        if(!it.expiry) return false;
-        const exp = new Date(it.expiry); const now = new Date();
-        const limit = new Date(now.getTime() + 7*24*60*60*1000);
-        if(!(exp >= now && exp <= limit)) return false;
-      } else if(expiryFilter === 'expired'){
-        if(!it.expiry) return false;
-        const exp = new Date(it.expiry);
-        if(!(exp < new Date())) return false;
-      } else if(expiryFilter === 'no-expiry'){
-        if(it.expiry) return false;
+          if (urlParams.get('action') === 'new' && (user.role === 'admin' || user.role === 'delivery')) {
+            openItemModal(null);
+          }
+        }
+      } catch (err) {
+        showToast('Failed to load inventory: ' + err.message, 'error');
       }
-      return true;
+    }
+
+    function populateFilterDropdowns() {
+      const catSelect = document.getElementById('inv-filter-category');
+      const locSelect = document.getElementById('inv-filter-location');
+      const supSelect = document.getElementById('inv-filter-supplier');
+
+      const cats = Array.from(new Set(allItems.map(i => i.category).filter(Boolean))).sort();
+      const locs = Array.from(new Set(allItems.map(i => i.location).filter(Boolean))).sort();
+      const sups = Array.from(new Set(allItems.map(i => i.supplier).filter(Boolean))).sort();
+
+      catSelect.innerHTML = '<option value="">All Categories</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+      locSelect.innerHTML = '<option value="">All Locations</option>' + locs.map(l => `<option value="${l}">${l}</option>`).join('');
+      supSelect.innerHTML = '<option value="">All Suppliers</option>' + sups.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    function applyFiltersAndRender() {
+      const q = document.getElementById('inv-search-input').value.trim().toLowerCase();
+      const cat = document.getElementById('inv-filter-category').value;
+      const status = document.getElementById('inv-filter-status').value;
+      const loc = document.getElementById('inv-filter-location').value;
+      const sup = document.getElementById('inv-filter-supplier').value;
+      const sort = document.getElementById('inv-sort-select').value;
+
+      let filtered = allItems.filter(it => {
+        if (q) {
+          const matchName = (it.name || '').toLowerCase().includes(q);
+          const matchBatch = (it.batchNo || '').toLowerCase().includes(q);
+          const matchSup = (it.supplier || '').toLowerCase().includes(q);
+          if (!matchName && !matchBatch && !matchSup) return false;
+        }
+        if (cat && it.category !== cat) return false;
+        if (status && it.status !== status) return false;
+        if (loc && it.location !== loc) return false;
+        if (sup && it.supplier !== sup) return false;
+        return true;
+      });
+
+      // Sorting
+      if (sort === 'name-asc') filtered.sort((a, b) => a.name.localeCompare(b.name));
+      else if (sort === 'name-desc') filtered.sort((a, b) => b.name.localeCompare(a.name));
+      else if (sort === 'qty-asc') filtered.sort((a, b) => Number(a.qty) - Number(b.qty));
+      else if (sort === 'qty-desc') filtered.sort((a, b) => Number(b.qty) - Number(a.qty));
+      else if (sort === 'expiry-asc') filtered.sort((a, b) => (a.expiry || '9999').localeCompare(b.expiry || '9999'));
+      else if (sort === 'price-desc') filtered.sort((a, b) => (Number(b.purchasePrice) * Number(b.qty)) - (Number(a.purchasePrice) * Number(a.qty)));
+
+      document.getElementById('inv-count-label').textContent = `Showing ${filtered.length} of ${allItems.length} inventory items`;
+
+      const tbody = document.getElementById('inventory-table-body');
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="small muted text-center" style="padding:32px">No items match your filter criteria.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => {
+        const isLow = Number(item.qty) <= Number(item.minStock);
+        const qtyDisplay = isLow
+          ? `<span style="color:#d97706;font-weight:700">${item.qty} ${item.unit} ⚠️</span>`
+          : `<strong>${item.qty}</strong> ${item.unit}`;
+
+        // Role-based actions
+        let actions = [];
+        // QR Code view available to all
+        actions.push(`<button class="btn-ghost btn-sm btn-qr" data-id="${item.id}" title="View QR Tag">📱 QR</button>`);
+
+        if (user.role === 'admin' || user.role === 'chef') {
+          actions.push(`<button class="btn-ghost btn-sm btn-use" data-id="${item.id}" title="Use Stock">📤 Use</button>`);
+        }
+        if (user.role === 'admin' || user.role === 'delivery') {
+          actions.push(`<button class="btn-ghost btn-sm btn-add-stock" data-id="${item.id}" title="Add Stock">➕ Add</button>`);
+        }
+        if (user.role === 'admin') {
+          actions.push(`<button class="btn-ghost btn-sm btn-edit" data-id="${item.id}" title="Edit Item">✏️</button>`);
+          actions.push(`<button class="btn-ghost btn-sm btn-del" data-id="${item.id}" title="Delete Item" style="color:#ef4444">🗑️</button>`);
+        }
+
+        return `
+          <tr>
+            <td style="width:48px">
+              <img class="item-thumb" src="${item.icon || 'assets/basmati-rice.svg'}" alt="${item.name}" onerror="this.src='assets/basmati-rice.svg'">
+            </td>
+            <td>
+              <div class="item-title">${item.name}</div>
+              <div class="item-sub">${item.category} &bull; Batch: ${item.batchNo || 'N/A'}</div>
+            </td>
+            <td>${qtyDisplay}</td>
+            <td class="small muted">Min: ${item.minStock} | Max: ${item.maxStock || '—'}</td>
+            <td>${formatStatusBadge(item.status)}</td>
+            <td class="small">${formatDate(item.expiry)}</td>
+            <td class="small">${item.location || 'Dry Storage'}</td>
+            <td class="small font-semibold">${formatCurrency(item.purchasePrice)}</td>
+            <td style="text-align:right;white-space:nowrap">
+              <div class="btn-group" style="justify-content:flex-end">
+                ${actions.join('')}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      attachRowActions();
+    }
+
+    function attachRowActions() {
+      // QR Modal
+      document.querySelectorAll('.btn-qr').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const it = allItems.find(x => x.id === btn.dataset.id);
+          if (it) showItemQRModal(it);
+        });
+      });
+
+      // Stock Use
+      document.querySelectorAll('.btn-use').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const it = allItems.find(x => x.id === btn.dataset.id);
+          if (it) openStockOpModal(it, 'USE_STOCK');
+        });
+      });
+
+      // Stock Add
+      document.querySelectorAll('.btn-add-stock').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const it = allItems.find(x => x.id === btn.dataset.id);
+          if (it) openStockOpModal(it, 'ADD_STOCK');
+        });
+      });
+
+      // Edit Item
+      document.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const it = allItems.find(x => x.id === btn.dataset.id);
+          if (it) openItemModal(it);
+        });
+      });
+
+      // Delete Item
+      document.querySelectorAll('.btn-del').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const it = allItems.find(x => x.id === btn.dataset.id);
+          if (!it) return;
+          if (confirm(`Are you sure you want to delete "${it.name}" from inventory? This action is recorded in audit logs.`)) {
+            try {
+              const res = await apiDeleteInventory(it.id);
+              if (res.success) {
+                showToast(`Deleted ${it.name}`, 'success');
+                loadInventory();
+              }
+            } catch (err) {
+              showToast(err.message || 'Failed to delete item', 'error');
+            }
+          }
+        });
+      });
+    }
+
+    // Filter toolbar listeners
+    ['inv-search-input', 'inv-filter-category', 'inv-filter-status', 'inv-filter-location', 'inv-filter-supplier', 'inv-sort-select'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', applyFiltersAndRender);
+        el.addEventListener('change', applyFiltersAndRender);
+      }
     });
 
-    const sortVal = sortSelect?.value || '';
-    if(sortVal === 'qty-asc'){
-      filtered.sort((a,b)=> Number(a.qty) - Number(b.qty));
-    } else if(sortVal === 'qty-desc'){
-      filtered.sort((a,b)=> Number(b.qty) - Number(a.qty));
-    }
-    return filtered;
-  }
-
-  function render(){
-    const list = applyFiltersAndSort(st.items);
-    tbody.innerHTML = '';
-    list.forEach(it=>{
-      const tr = document.createElement('tr');
-      const icon = it.icon ? ('<img src="'+it.icon+'" alt="'+it.name+'" style="width:40px;height:40px;border-radius:8px;margin-right:8px;vertical-align:middle">') : '';
-      const actions = [];
-      const role = st.user?.role || 'admin';
-      if(role === 'admin' || role === 'chef') actions.push('<button class="btn-ghost btn-use" data-id="'+it.id+'">Use</button>');
-      if(role === 'admin') actions.push('<button class="btn-ghost btn-edit" data-id="'+it.id+'">Edit</button>');
-      if(role === 'admin') actions.push('<button class="btn-ghost btn-del" data-id="'+it.id+'">Del</button>');
-      if(role === 'delivery') actions.push('<button class="btn-ghost btn-add" data-id="'+it.id+'">Add Stock</button>');
-      tr.innerHTML = '<td style="width:64px">'+icon+'</td><td>'+it.name+'</td><td>'+it.qty+'</td><td>'+ (it.unit||'') +'</td><td>'+ (it.category||'') +'</td><td class="small">'+ (it.expiry||'') +'</td><td class="small">'+ (it.lastUsed||'') +'</td><td>'+ actions.join(' ') +'</td>';
-      tbody.appendChild(tr);
+    document.getElementById('btn-reset-filters').addEventListener('click', () => {
+      document.getElementById('inv-search-input').value = '';
+      document.getElementById('inv-filter-category').value = '';
+      document.getElementById('inv-filter-status').value = '';
+      document.getElementById('inv-filter-location').value = '';
+      document.getElementById('inv-filter-supplier').value = '';
+      document.getElementById('inv-sort-select').value = '';
+      applyFiltersAndRender();
     });
-    attach();
-  }
 
-  function attach(){
-    Array.from(document.querySelectorAll('.btn-use')).forEach(b=>b.addEventListener('click', e=>{
-      const id = e.target.dataset.id;
-      const qty = prompt('How many units to use?', '1'); if(qty===null) return;
-      const q = parseFloat(q); if(isNaN(q) || q<=0) return alert('Invalid qty');
-      const it = st.items.find(x=>x.id===id);
-      it.qty = Number((it.qty - q).toFixed(3)); it.lastUsed = new Date().toISOString().slice(0,10); it.usageLog = it.usageLog||[]; it.usageLog.push({date:it.lastUsed,qty:q}); mod.saveState(); render();
-    })));
-    Array.from(document.querySelectorAll('.btn-add')).forEach(b=>b.addEventListener('click', e=>{
-      const id = e.target.dataset.id; const qty = prompt('How many units to add?', '1'); if(qty===null) return;
-      const q = parseFloat(q); if(isNaN(q) || q<=0) return alert('Invalid qty'); const it = st.items.find(x=>x.id===id); it.qty = Number((it.qty + q).toFixed(3)); mod.saveState(); render();
-    })));
-    Array.from(document.querySelectorAll('.btn-edit')).forEach(b=>b.addEventListener('click', e=>{
-      const id = e.target.dataset.id; const it = st.items.find(x=>x.id===id); const name = prompt('Name', it.name); if(name === null) return; it.name = name; mod.saveState(); render();
-    })));
-    Array.from(document.querySelectorAll('.btn-del')).forEach(b=>b.addEventListener('click', e=>{
-      const id = e.target.dataset.id; if(!confirm('Delete item?')) return; st.items = st.items.filter(x=>x.id!==id); mod.saveState(); render();
-    })));
-  }
+    // Item CRUD Modal Logic
+    const itemModal = document.getElementById('item-modal');
+    const openAddBtn = document.getElementById('btn-open-add-item');
 
-  // New item modal handlers
-  const modal = document.getElementById('modal-overlay');
-  const openModal = (data)=> {
-    modal.classList.remove('hidden');
-    document.getElementById('item-name').value = data?.name || '';
-    document.getElementById('item-qty').value = data?.qty || '';
-    document.getElementById('item-unit').value = data?.unit || '';
-    document.getElementById('item-category').value = data?.category || '';
-    document.getElementById('item-expiry').value = data?.expiry || '';
-    document.getElementById('modal-save').dataset.id = data?.id || '';
-  };
-  const closeModal = ()=> { modal.classList.add('hidden'); document.getElementById('modal-save').dataset.id=''; };
-
-  document.getElementById('modal-cancel').addEventListener('click', closeModal);
-
-  function canAdd(){
-    const role = st.user?.role || 'admin';
-    return role === 'admin' || role === 'delivery';
-  }
-
-  // wire left and top new-item buttons
-  btnNewTop.addEventListener('click', ()=>{ if(!canAdd()){ alert('Only Admin or Delivery partner can add new items.'); return; } openModal(null); });
-  btnNewLeft.addEventListener('click', ()=>{ if(!canAdd()){ alert('Only Admin or Delivery partner can add new items.'); return; } openModal(null); });
-
-  document.getElementById('modal-save').addEventListener('click', ()=>{
-    const id = document.getElementById('modal-save').dataset.id;
-    const obj = {
-      name: document.getElementById('item-name').value.trim(),
-      qty: parseFloat(document.getElementById('item-qty').value) || 0,
-      unit: document.getElementById('item-unit').value.trim(),
-      category: document.getElementById('item-category').value.trim(),
-      expiry: document.getElementById('item-expiry').value || '',
-      lastUsed: ''
-    };
-    if(!obj.name) return alert('Name required');
-    if(id){
-      const it = st.items.find(x=>x.id===id);
-      Object.assign(it, obj);
-    } else {
-      const slug = obj.name.toLowerCase().replace(/[^a-z0-9]+/g,'-');
-      obj.id = (Date.now().toString(36) + Math.random().toString(36).slice(2,6));
-      obj.icon = 'assets/' + slug + '.svg';
-      obj.usageLog = [];
-      st.items.unshift(obj);
+    if (user.role !== 'admin' && user.role !== 'delivery') {
+      openAddBtn.style.display = 'none';
     }
-    mod.saveState();
-    closeModal();
-    populateCategories();
-    render();
-  });
 
-  // wire filters/sort/search to re-render
-  populateCategories();
-  [catSelect, expirySelect, sortSelect, searchInput].forEach(c=>{ if(c) c.addEventListener('change', render); if(c) c.addEventListener('input', render); });
-  // show/hide left add stock button for delivery
-  if(st.user?.role === 'delivery'){ btnAddLeft.style.display = 'block'; btnNewLeft.style.display = 'none'; }
-  render();
-});
-</script>
+    openAddBtn.addEventListener('click', () => openItemModal(null));
 
+    function openItemModal(item) {
+      document.getElementById('item-form').reset();
+      if (item) {
+        document.getElementById('item-modal-title').textContent = `Edit Inventory Item: ${item.name}`;
+        document.getElementById('form-item-id').value = item.id;
+        document.getElementById('form-name').value = item.name;
+        document.getElementById('form-category').value = item.category;
+        document.getElementById('form-qty').value = item.qty;
+        document.getElementById('form-unit').value = item.unit;
+        document.getElementById('form-price').value = item.purchasePrice;
+        document.getElementById('form-min-stock').value = item.minStock;
+        document.getElementById('form-max-stock').value = item.maxStock || '';
+        document.getElementById('form-expiry').value = item.expiry || '';
+        document.getElementById('form-purchase-date').value = item.purchaseDate || '';
+        document.getElementById('form-location').value = item.location || '';
+        document.getElementById('form-supplier').value = item.supplier || '';
+        document.getElementById('form-batch').value = item.batchNo || '';
+      } else {
+        document.getElementById('item-modal-title').textContent = '➕ New Inventory Item';
+        document.getElementById('form-item-id').value = '';
+        document.getElementById('form-purchase-date').value = new Date().toISOString().slice(0, 10);
+      }
+      itemModal.classList.remove('hidden');
+    }
 
-</body></html>
+    [document.getElementById('btn-close-item-modal'), document.getElementById('btn-cancel-item-modal')].forEach(btn => {
+      btn.addEventListener('click', () => itemModal.classList.add('hidden'));
+    });
+
+    document.getElementById('item-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('form-item-id').value;
+      const data = {
+        name: document.getElementById('form-name').value.trim(),
+        category: document.getElementById('form-category').value.trim(),
+        qty: parseFloat(document.getElementById('form-qty').value),
+        unit: document.getElementById('form-unit').value.trim(),
+        purchasePrice: parseFloat(document.getElementById('form-price').value),
+        minStock: parseFloat(document.getElementById('form-min-stock').value),
+        maxStock: parseFloat(document.getElementById('form-max-stock').value) || null,
+        expiry: document.getElementById('form-expiry').value,
+        purchaseDate: document.getElementById('form-purchase-date').value,
+        location: document.getElementById('form-location').value.trim(),
+        supplier: document.getElementById('form-supplier').value.trim(),
+        batchNo: document.getElementById('form-batch').value.trim()
+      };
+
+      try {
+        if (id) {
+          const res = await apiUpdateInventory(id, data);
+          if (res.success) {
+            showToast('Item updated successfully', 'success');
+            itemModal.classList.add('hidden');
+            loadInventory();
+          }
+        } else {
+          const res = await apiAddInventory(data);
+          if (res.success) {
+            showToast('Item created successfully', 'success');
+            itemModal.classList.add('hidden');
+            loadInventory();
+          }
+        }
+      } catch (err) {
+        showToast(err.message || 'Save failed', 'error');
+      }
+    });
+
+    // Stock Op Modal Logic
+    const stockModal = document.getElementById('stock-op-modal');
+
+    function openStockOpModal(item, op) {
+      document.getElementById('stock-op-form').reset();
+      document.getElementById('stock-op-item-id').value = item.id;
+      document.getElementById('stock-op-type').value = op;
+      document.getElementById('stock-op-item-name').textContent = item.name;
+      document.getElementById('stock-op-item-current').textContent = `Current Stock: ${item.qty} ${item.unit} | Location: ${item.location || 'Dry Storage'}`;
+      document.getElementById('stock-op-unit').value = item.unit;
+
+      if (op === 'USE_STOCK') {
+        document.getElementById('stock-op-title').textContent = `📤 Use / Consume ${item.name}`;
+        document.getElementById('stock-op-reason').placeholder = 'e.g., Dinner gravy prep / recipe batch';
+        document.getElementById('stock-op-extra-row').style.display = 'none';
+      } else {
+        document.getElementById('stock-op-title').textContent = `➕ Add Stock for ${item.name}`;
+        document.getElementById('stock-op-reason').placeholder = 'e.g., Weekly delivery / supplier restocking';
+        document.getElementById('stock-op-extra-row').style.display = 'grid';
+      }
+
+      stockModal.classList.remove('hidden');
+    }
+
+    [document.getElementById('btn-close-stock-op'), document.getElementById('btn-cancel-stock-op')].forEach(btn => {
+      btn.addEventListener('click', () => stockModal.classList.add('hidden'));
+    });
+
+    document.getElementById('stock-op-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const itemId = document.getElementById('stock-op-item-id').value;
+      const op = document.getElementById('stock-op-type').value;
+      const qty = parseFloat(document.getElementById('stock-op-qty').value);
+      const reason = document.getElementById('stock-op-reason').value.trim();
+      const batchNo = document.getElementById('stock-op-batch').value.trim();
+      const expiry = document.getElementById('stock-op-expiry').value;
+
+      try {
+        const res = await apiStockOperation(itemId, op, qty, reason, batchNo, expiry);
+        if (res.success) {
+          showToast(res.message, 'success');
+          stockModal.classList.add('hidden');
+          loadInventory();
+        }
+      } catch (err) {
+        showToast(err.message || 'Operation failed', 'error');
+      }
+    });
+
+    loadInventory();
+  </script>
+</body>
+</html>

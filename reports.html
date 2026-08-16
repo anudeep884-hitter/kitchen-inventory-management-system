@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reports &amp; Analytics — Kitchen Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="reports">
+  <header class="header"></header>
+
+  <div class="container grid">
+    <aside></aside>
+
+    <main>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Reports &amp; Operational Analytics</h2>
+            <div class="card-subtitle">Generate real-time executive reports on pantry valuation, movements, expiry risks, and consumption</div>
+          </div>
+          <div class="btn-group">
+            <button id="btn-export-csv" class="btn btn-sm">📥 Export CSV</button>
+            <button id="btn-print-report" class="btn-ghost btn-sm">🖨️ Print Report</button>
+          </div>
+        </div>
+
+        <!-- Report Type Tabs -->
+        <div class="pills-group" style="margin-bottom:16px">
+          <button class="pill active" data-type="inventory">📦 Master Inventory Valuation</button>
+          <button class="pill" data-type="movement">📜 Stock Movement &amp; Audit</button>
+          <button class="pill" data-type="expiry">⏰ Expiry &amp; Waste Risk</button>
+          <button class="pill" data-type="consumption">🍳 Ingredient Consumption</button>
+          <button class="pill" data-type="purchase">🚚 Supplier Purchases</button>
+        </div>
+
+        <!-- Report Summary Header -->
+        <div style="background:#f8fafc;padding:12px 16px;border-radius:10px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-weight:700;font-size:14px" id="report-title-display">Master Inventory Valuation Report</div>
+            <div class="small muted" id="report-meta-display">Generated on — &bull; 0 total rows</div>
+          </div>
+        </div>
+
+        <!-- Report Table Container -->
+        <div class="table-wrap">
+          <table id="report-table">
+            <thead id="report-thead"></thead>
+            <tbody id="report-tbody">
+              <tr><td class="small muted text-center" style="padding:24px">Loading report data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import {
+      requireAuth,
+      renderAppShell,
+      apiGetReport,
+      exportToCSV,
+      formatDate,
+      showToast
+    } from './shared.js';
+
+    const user = requireAuth(['admin', 'chef']);
+    if (!user) { /* redirected */ }
+
+    renderAppShell('reports');
+
+    let currentReportType = 'inventory';
+    let currentReportData = [];
+    let currentReportTitle = '';
+
+    async function loadReport(type) {
+      currentReportType = type;
+      const tbody = document.getElementById('report-tbody');
+      tbody.innerHTML = '<tr><td colspan="10" class="small muted text-center" style="padding:24px">Generating report from database...</td></tr>';
+
+      try {
+        const res = await apiGetReport(type);
+        if (res.success) {
+          currentReportData = res.data || [];
+          currentReportTitle = res.title || 'Kitchen Inventory Report';
+          document.getElementById('report-title-display').textContent = currentReportTitle;
+          document.getElementById('report-meta-display').textContent = `Generated on ${formatDate(res.generatedAt)} • ${res.rowCount} total rows`;
+          renderReportTable(currentReportData);
+        }
+      } catch (err) {
+        showToast('Error loading report: ' + err.message, 'error');
+      }
+    }
+
+    function renderReportTable(data) {
+      const thead = document.getElementById('report-thead');
+      const tbody = document.getElementById('report-tbody');
+
+      if (!data || !data.length) {
+        thead.innerHTML = '';
+        tbody.innerHTML = '<tr><td class="small muted text-center" style="padding:32px">No records found for this report type.</td></tr>';
+        return;
+      }
+
+      const columns = Object.keys(data[0]);
+      thead.innerHTML = `<tr>${columns.map(col => `<th>${col}</th>`).join('')}</tr>`;
+
+      tbody.innerHTML = data.map(row => `
+        <tr>
+          ${columns.map((col, idx) => {
+            const val = row[col] ?? '—';
+            const isBold = idx === 0 || idx === 1;
+            return `<td style="${isBold ? 'font-weight:600' : ''}">${val}</td>`;
+          }).join('')}
+        </tr>
+      `).join('');
+    }
+
+    // Tab switching
+    document.querySelectorAll('.pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        loadReport(pill.dataset.type);
+      });
+    });
+
+    // CSV Export
+    document.getElementById('btn-export-csv').addEventListener('click', () => {
+      if (!currentReportData.length) {
+        showToast('No data to export', 'warning');
+        return;
+      }
+      exportToCSV(currentReportTitle.replace(/\s+/g, '_'), currentReportData);
+    });
+
+    // Print
+    document.getElementById('btn-print-report').addEventListener('click', () => {
+      window.print();
+    });
+
+    loadReport('inventory');
+  </script>
+</body>
+</html>

@@ -1,126 +1,191 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Profile — Kitchen Inventory</title><link rel="stylesheet" href="styles.css"></head>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>User Profile — Kitchen Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
 <body data-page="profile">
-  <div class="header">
-    <div class="brand"><div class="logo">KI</div><div><h1>Kitchen Inventory</h1><div class="small muted">Your account</div></div></div>
-    <div class="controls"><div class="search-bar" style="width:420px;"><input class="input" id="global-search" placeholder="Search items, e.g., 'milk'"></div><div class="profile-row" style="gap:8px;margin-left:12px"><div class="avatar" id="header-avatar">DU</div><div class="small muted" id="header-user">Demo</div></div></div>
-  </div>
+  <header class="header"></header>
 
   <div class="container grid">
-    <aside>
-      <nav>
-        <a class="nav-item" data-target="dashboard" href="dashboard.html">🏠 Dashboard</a>
-        <a class="nav-item" data-target="inventory" href="inventory.html">📦 Inventory</a>
-        <a class="nav-item" data-target="forecast" href="forecast.html">📈 Forecast</a>
-        <a class="nav-item" data-target="usage" href="usage.html">📝 Usage</a>
-        <a class="nav-item active" data-target="profile" href="profile.html">👤 Profile</a>
-        <a class="nav-item" data-target="settings" href="settings.html">⚙️ Settings</a>
-      </nav>
-    </aside>
+    <aside></aside>
 
     <main>
       <div class="card">
-        <h2>Profile</h2>
-        <div class="profile-row" style="margin-top:12px;align-items:flex-start">
-          <div class="avatar" id="profile-avatar-large">DU</div>
-          <div style="flex:1">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div>
-                <div id="profile-name" class="larger">Demo User</div>
-                <div id="profile-role" class="small muted">Role: -</div>
-              </div>
-              <div style="text-align:right">
-                <div id="profile-joined" class="small muted">Joined: -</div>
-              </div>
-            </div>
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Staff Profile &amp; Account Details</h2>
+            <div class="card-subtitle">Manage your personal credentials, contact info, and kitchen station details</div>
+          </div>
+          <button id="btn-toggle-edit-profile" class="btn btn-sm">✏️ Edit Profile</button>
+        </div>
 
-            <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-              <div>
-                <div class="small muted">Email</div>
-                <div id="profile-email" style="font-weight:600">demo@local</div>
+        <!-- Profile Display Card -->
+        <div id="profile-view-mode">
+          <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;padding:16px 0">
+            <div class="avatar avatar-lg" id="prof-avatar-large">AD</div>
+            <div style="flex:1;min-width:240px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                <div>
+                  <h3 style="font-size:22px;font-weight:800;letter-spacing:-0.4px" id="prof-display-name">Alice Admin</h3>
+                  <div class="small muted" id="prof-display-email">admin@example.com</div>
+                </div>
+                <div id="prof-display-role-badge"></div>
               </div>
-              <div>
-                <div class="small muted">Phone</div>
-                <div id="profile-phone" style="font-weight:600">-</div>
-              </div>
-              <div>
-                <div class="small muted">Location</div>
-                <div id="profile-location" style="font-weight:600">-</div>
-              </div>
-              <div>
-                <div class="small muted">Timezone</div>
-                <div id="profile-tz" style="font-weight:600">Asia/Kolkata</div>
-              </div>
-            </div>
 
-            <div style="margin-top:12px">
-              <div class="small muted">Bio</div>
-              <div id="profile-bio" style="margin-top:6px">This is a demo profile stored locally.</div>
-            </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin-top:20px;background:#f8fafc;padding:16px;border-radius:12px;border:1px solid var(--border)">
+                <div>
+                  <div class="form-label" style="font-size:11px">Phone Number</div>
+                  <div style="font-weight:600" id="prof-display-phone">+91 98765 43210</div>
+                </div>
+                <div>
+                  <div class="form-label" style="font-size:11px">Kitchen Location</div>
+                  <div style="font-weight:600" id="prof-display-location">Mumbai Central Kitchen</div>
+                </div>
+                <div>
+                  <div class="form-label" style="font-size:11px">Timezone</div>
+                  <div style="font-weight:600" id="prof-display-timezone">Asia/Kolkata</div>
+                </div>
+                <div>
+                  <div class="form-label" style="font-size:11px">Joined Date</div>
+                  <div style="font-weight:600" id="prof-display-joined">15 Jan 2024</div>
+                </div>
+              </div>
 
-            <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
-              <button id="btn-edit-profile" class="btn-ghost">Edit</button>
-              <button id="btn-save-profile" class="btn" style="display:none">Save</button>
+              <div style="margin-top:16px">
+                <div class="form-label" style="font-size:11px">Bio &amp; Responsibilities</div>
+                <p class="small muted" id="prof-display-bio" style="line-height:1.6">Administrator overseeing kitchen operations.</p>
+              </div>
             </div>
           </div>
+        </div>
+
+        <!-- Profile Edit Form Mode (Hidden by default) -->
+        <div id="profile-edit-mode" style="display:none;margin-top:16px">
+          <form id="profile-edit-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="edit-prof-name">Full Name *</label>
+                <input id="edit-prof-name" class="input" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email (Readonly)</label>
+                <input id="edit-prof-email" class="input" readonly />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="edit-prof-phone">Phone Number</label>
+                <input id="edit-prof-phone" class="input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="edit-prof-location">Location / Station</label>
+                <input id="edit-prof-location" class="input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="edit-prof-timezone">Timezone</label>
+                <input id="edit-prof-timezone" class="input" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="edit-prof-bio">Bio</label>
+              <textarea id="edit-prof-bio" class="input" rows="3"></textarea>
+            </div>
+
+            <div class="actions-row">
+              <button type="button" class="btn-ghost btn-sm" id="btn-cancel-edit-prof">Cancel</button>
+              <button type="submit" class="btn btn-sm">Save Profile Changes</button>
+            </div>
+          </form>
         </div>
       </div>
     </main>
   </div>
 
-<script>
-(function(){
-  const STORAGE_KEY = 'kitchen_inventory_v1_mp_improved';
-  function getState(){ try{ const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : { user: null, items: [] }; }catch(e){ return { user:null, items: [] }; } }
-  function saveState(st){ localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); }
+  <script type="module">
+    import {
+      requireAuth,
+      renderAppShell,
+      apiUpdateProfile,
+      formatRoleBadge,
+      formatDate,
+      showToast
+    } from './shared.js';
 
-  const state = getState();
-  const user = state.user || { name: 'Demo User', email: 'demo@local', role: 'admin' };
-  document.getElementById('header-user').textContent = user.name || 'Demo';
-  document.getElementById('profile-name').textContent = user.name || 'Demo User';
-  document.getElementById('profile-email').textContent = user.email || 'demo@local';
-  document.getElementById('profile-role').textContent = 'Role: ' + (user.role || 'admin');
-  // fill richer fields if present
-  document.getElementById('profile-phone').textContent = user.phone || '+91 90000 00000';
-  document.getElementById('profile-location').textContent = user.location || 'Bengaluru, India';
-  document.getElementById('profile-tz').textContent = user.timezone || 'Asia/Kolkata';
-  document.getElementById('profile-bio').textContent = user.bio || 'Food lover. Manages kitchen inventory for demo purposes.';
-  // joined date, either stored or default to today's date in YYYY-MM-DD
-  document.getElementById('profile-joined').textContent = 'Joined: ' + (user.joined || new Date().toISOString().slice(0,10));
+    const user = requireAuth();
+    if (!user) { /* redirected */ }
 
-  // Edit profile (simple inline editable)
-  document.getElementById('btn-edit-profile').addEventListener('click', ()=>{
-    // turn fields into inputs
-    const nameEl = document.getElementById('profile-name');
-    const emailEl = document.getElementById('profile-email');
-    const phoneEl = document.getElementById('profile-phone');
-    const locEl = document.getElementById('profile-location');
-    const bioEl = document.getElementById('profile-bio');
+    renderAppShell('profile');
 
-    nameEl.innerHTML = `<input id="inp-name" class="input" value="${user.name || ''}" />`;
-    emailEl.innerHTML = `<input id="inp-email" class="input" value="${user.email || ''}" />`;
-    phoneEl.innerHTML = `<input id="inp-phone" class="input" value="${user.phone || ''}" />`;
-    locEl.innerHTML = `<input id="inp-loc" class="input" value="${user.location || ''}" />`;
-    bioEl.innerHTML = `<textarea id="inp-bio" class="input" rows="3">${user.bio || ''}</textarea>`;
+    function populateProfile(u) {
+      const initials = u.name ? u.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : 'AD';
+      document.getElementById('prof-avatar-large').textContent = initials;
+      document.getElementById('prof-display-name').textContent = u.name || 'User';
+      document.getElementById('prof-display-email').textContent = u.email;
+      document.getElementById('prof-display-role-badge').innerHTML = formatRoleBadge(u.role);
+      document.getElementById('prof-display-phone').textContent = u.phone || '—';
+      document.getElementById('prof-display-location').textContent = u.location || '—';
+      document.getElementById('prof-display-timezone').textContent = u.timezone || 'Asia/Kolkata';
+      document.getElementById('prof-display-joined').textContent = formatDate(u.joined);
+      document.getElementById('prof-display-bio').textContent = u.bio || 'Kitchen operations team member.';
 
-    document.getElementById('btn-edit-profile').style.display = 'none';
-    document.getElementById('btn-save-profile').style.display = 'inline-block';
-  });
+      // Prepopulate form
+      document.getElementById('edit-prof-name').value = u.name || '';
+      document.getElementById('edit-prof-email').value = u.email;
+      document.getElementById('edit-prof-phone').value = u.phone || '';
+      document.getElementById('edit-prof-location').value = u.location || '';
+      document.getElementById('edit-prof-timezone').value = u.timezone || 'Asia/Kolkata';
+      document.getElementById('edit-prof-bio').value = u.bio || '';
+    }
 
-  document.getElementById('btn-save-profile').addEventListener('click', ()=>{
-    const st = getState();
-    const u = st.user || {};
-    u.name = document.getElementById('inp-name').value.trim();
-    u.email = document.getElementById('inp-email').value.trim();
-    u.phone = document.getElementById('inp-phone').value.trim();
-    u.location = document.getElementById('inp-loc').value.trim();
-    u.bio = document.getElementById('inp-bio').value.trim();
-    u.joined = u.joined || new Date().toISOString().slice(0,10);
-    st.user = u;
-    saveState(st);
-    alert('Profile saved locally.');
-    location.reload();
-  });
-})();
-</script>
-</body></html>
+    const viewMode = document.getElementById('profile-view-mode');
+    const editMode = document.getElementById('profile-edit-mode');
+    const editBtn = document.getElementById('btn-toggle-edit-profile');
+
+    editBtn.addEventListener('click', () => {
+      viewMode.style.display = 'none';
+      editMode.style.display = 'block';
+      editBtn.style.display = 'none';
+    });
+
+    document.getElementById('btn-cancel-edit-prof').addEventListener('click', () => {
+      viewMode.style.display = 'block';
+      editMode.style.display = 'none';
+      editBtn.style.display = 'inline-flex';
+    });
+
+    document.getElementById('profile-edit-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const updated = {
+        name: document.getElementById('edit-prof-name').value.trim(),
+        phone: document.getElementById('edit-prof-phone').value.trim(),
+        location: document.getElementById('edit-prof-location').value.trim(),
+        timezone: document.getElementById('edit-prof-timezone').value.trim(),
+        bio: document.getElementById('edit-prof-bio').value.trim()
+      };
+
+      try {
+        const res = await apiUpdateProfile(updated);
+        if (res.success) {
+          showToast('Profile updated successfully', 'success');
+          // Update stored user in localStorage
+          const fullUser = { ...user, ...res.user };
+          localStorage.setItem('kitchen_inventory_auth_user', JSON.stringify(fullUser));
+          populateProfile(fullUser);
+          viewMode.style.display = 'block';
+          editMode.style.display = 'none';
+          editBtn.style.display = 'inline-flex';
+        }
+      } catch (err) {
+        showToast(err.message || 'Error updating profile', 'error');
+      }
+    });
+
+    populateProfile(user);
+  </script>
+</body>
+</html>

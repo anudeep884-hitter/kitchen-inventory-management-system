@@ -1,0 +1,29 @@
+{
+  "name": "kitchen-inventory-management-system",
+  "version": "1.0.0",
+  "description": "<html><body><p>README.md - placeholder (open improved project files for full functionality).</p></body></html>\r 🍳 Kitchen Inventory Management System\r A web-based Kitchen Inventory Management System designed to efficiently manage kitchen ingredients, stock levels, expiry dates, users, and inventory activities. The system helps Admins, Chefs, and Delivery Partners monitor and manage kitchen inventory through role-based dashboards.\r ✨ Key Features\r •\t👨‍💼 Admin Dashboard – Manage users, inventory, and overall kitchen operations. \r •\t👨‍🍳 Chef Dashboard – View available ingredients, use items, and monitor expiring stock. \r •\t🚚 Delivery Partner Dashboard – Manage and track delivery-related activities. \r •\t📦 Inventory Management – Add, update, delete, and track kitchen items. \r •\t⏰ Expiry Notifications – Get alerts for items that are about to expire. \r •\t🔔 Inventory Notifications – Track newly added and recently used items. \r •\t🔐 Role-Based Access Control – Different permissions for Admin, Chef, and Delivery Partner. \r •\t📊 Dashboard Monitoring – Quickly view important inventory information. \r 🛠️ Tech Stack\r Frontend: HTML, CSS, JavaScript\r Backend: Node.js, Express.js\r Database: MongoDB\r Development Tools: Nodemon, MongoDB Compass\r 🎯 Objective\r The main objective is to reduce food wastage, prevent stock shortages, monitor expiry dates, and simplify kitchen inventory management through a centralized digital system.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anudeep884-hitter/kitchen-inventory-management-system.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/anudeep884-hitter/kitchen-inventory-management-system/issues"
+  },
+  "homepage": "https://github.com/anudeep884-hitter/kitchen-inventory-management-system#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3"
+  }
+}

@@ -3,109 +3,263 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Login — Kitchen Inventory</title>
+  <title>Login — Kitchen Inventory Management System</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    body[data-page="login"] .search-bar { display: none; }
-    .login-column { max-width:420px; margin:0 auto; display:flex; flex-direction:column; gap:10px; align-items:stretch; }
-    label.small { font-size:13px; color:var(--muted); margin-bottom:6px; }
-    select.input { appearance: none; -webkit-appearance:none; -moz-appearance:none; }
+    .login-container {
+      min-height: 80vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+      padding: 32px 28px;
+    }
+    .demo-chips {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .demo-chip {
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .demo-chip:hover {
+      background: var(--accent-light);
+      border-color: var(--accent);
+      color: var(--accent-2);
+    }
+    .pwd-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .pwd-toggle {
+      position: absolute;
+      right: 10px;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 4px;
+    }
+    .error-alert {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: none;
+    }
   </style>
 </head>
 <body data-page="login">
-  <div class="header">
-    <div class="brand">
-      <div class="logo">KI</div>
-      <div>
-        <h1>Kitchen Inventory</h1>
-        <div class="small muted">Manage pantry, forecast usage, and avoid waste</div>
+  <div class="login-container">
+    <div class="card login-card">
+      <div style="text-align:center;margin-bottom:24px">
+        <div class="logo" style="margin:0 auto 12px;width:52px;height:52px;font-size:22px">KI</div>
+        <h2 style="font-size:22px;font-weight:800;letter-spacing:-0.4px">Kitchen Inventory</h2>
+        <p class="small muted" style="margin-top:4px">Sign in to manage kitchen stock, usage, and operations</p>
       </div>
-    </div>
 
-    <div class="controls">
-      <div class="search-bar" style="width:420px;">
-        <input class="input" id="global-search" placeholder="Search items, e.g., 'milk'">
-      </div>
-      <div class="profile-row" style="gap:8px;margin-left:12px">
-        <div class="avatar" id="header-avatar">DU</div>
-        <div class="small muted" id="header-user">Demo</div>
-      </div>
-    </div>
-  </div>
+      <div id="login-error" class="error-alert"></div>
 
-  <div class="container">
-    <div class="card" style="max-width:620px;margin:24px auto;text-align:left">
-      <h2 style="text-align:center">Welcome to Kitchen Inventory</h2>
-      <p class="small muted" style="text-align:center">Sign in with any email + password to continue (demo). Choose a role below.</p>
-
-      <div class="login-column" style="margin-top:18px">
-        <div>
-          <label class="small" for="login-email">Email</label>
-          <input id="login-email" class="input" placeholder="you@example.com" type="email" />
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email Address</label>
+          <input id="login-email" class="input" type="email" placeholder="admin@example.com" required autocomplete="username" />
         </div>
 
-        <div>
-          <label class="small" for="login-password">Password</label>
-          <input id="login-password" class="input" placeholder="password (any)" type="password" />
+        <div class="form-group">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <label class="form-label" for="login-password" style="margin-bottom:0">Password</label>
+            <a href="#" id="link-forgot-password" class="small muted" style="text-decoration:none;font-size:12px">Forgot password?</a>
+          </div>
+          <div class="pwd-wrapper">
+            <input id="login-password" class="input" type="password" placeholder="••••••••" required autocomplete="current-password" style="padding-right:40px" />
+            <button type="button" id="btn-toggle-pwd" class="pwd-toggle" title="Show/Hide Password">👁️</button>
+          </div>
         </div>
 
-        <div>
-          <label class="small" for="login-role">Role</label>
-          <select id="login-role" class="input">
-            <option value="admin">Admin — full access</option>
-            <option value="chef">Chef — update usage</option>
-            <option value="delivery">Delivery Partner — add stock</option>
-          </select>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);cursor:pointer">
+            <input type="checkbox" id="login-remember" checked />
+            Remember me
+          </label>
         </div>
 
-        <div style="display:flex;gap:8px;justify-content:center;margin-top:6px">
-          <button id="btn-login" class="btn" style="min-width:160px">Sign in</button>
-          
-        </div>
+        <button type="submit" id="btn-login-submit" class="btn" style="width:100%;padding:11px">
+          Sign In
+        </button>
+      </form>
 
-        <p class="footer-note" style="text-align:center;margin-top:8px">Demo login — any email & password work. Selected role will control available UI actions.</p>
+      <div style="margin-top:24px;border-top:1px solid var(--border-subtle);padding-top:16px;text-align:center">
+        <div class="small muted" style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Quick Demo Accounts</div>
+        <div class="demo-chips">
+          <div class="demo-chip" data-email="admin@example.com" data-pwd="admin123">👨‍💼 Admin</div>
+          <div class="demo-chip" data-email="chef@example.com" data-pwd="chef123">👨‍🍳 Chef</div>
+          <div class="demo-chip" data-email="delivery@example.com" data-pwd="delivery123">🚚 Delivery Partner</div>
+        </div>
       </div>
     </div>
   </div>
 
-  
-<script>
-(function(){
-  const STORAGE_KEY = 'kitchen_inventory_v1_mp_improved';
-  function getState(){ try{ const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : { user: null, items: [] }; }catch(e){ return { user:null, items: [] }; } }
-  function saveState(state){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  <!-- Forgot Password Modal -->
+  <div id="forgot-modal" class="modal hidden">
+    <div class="modal-card" style="max-width:400px">
+      <div class="modal-header">
+        <h3 class="modal-title">Reset Password</h3>
+        <button type="button" class="btn-close" id="btn-close-forgot">&times;</button>
+      </div>
+      <p class="small muted" style="margin-bottom:14px">Enter your registered email address to receive password reset instructions.</p>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input id="forgot-email" class="input" type="email" placeholder="you@example.com" />
+      </div>
+      <div id="forgot-feedback" style="display:none;margin-top:10px" class="small"></div>
+      <div class="actions-row">
+        <button id="btn-forgot-cancel" class="btn-ghost btn-sm">Cancel</button>
+        <button id="btn-forgot-submit" class="btn btn-sm">Send Reset Link</button>
+      </div>
+    </div>
+  </div>
 
-  const demoMap = {
-    'admin@example.com': {"name": "Alice Admin", "email": "admin@example.com", "role": "admin", "phone": "+91 90001 00001", "location": "Mumbai, India", "timezone": "Asia/Kolkata", "bio": "Administrator - oversees inventory and users.", "joined": "2024-02-15"},
-    'chef@example.com': {"name": "Carlos Chef", "email": "chef@example.com", "role": "chef", "phone": "+91 90002 00002", "location": "Kochi, India", "timezone": "Asia/Kolkata", "bio": "Head chef - logs usage and prepares menus.", "joined": "2024-06-20"},
-    'delivery@example.com': {"name": "Dina Delivery", "email": "delivery@example.com", "role": "delivery", "phone": "+91 90003 00003", "location": "Delhi, India", "timezone": "Asia/Kolkata", "bio": "Delivery partner - updates stock on arrival.", "joined": "2024-09-01"}
-  };
+  <script type="module">
+    import { apiLogin, apiForgotPassword, getCurrentUser } from './shared.js';
 
-  document.getElementById('btn-login').addEventListener('click', ()=>{
-    const email = document.getElementById('login-email').value.trim();
-    const pass = document.getElementById('login-password').value;
-    const role = document.getElementById('login-role').value;
-    if(!email) return alert('Please enter an email (demo login accepts any email).');
-    const st = getState();
-    // if email matches a demo account, use that user's full profile
-    if(demoMap[email]){
-      st.user = demoMap[email];
-    } else {
-      // otherwise use role-based defaults
-      st.user = { name: email.split('@')[0] || email, email: email, role: role, phone: '', location: '', timezone: 'Asia/Kolkata', bio: '' };
+    // If already logged in, redirect based on role
+    const curUser = getCurrentUser();
+    if (curUser) {
+      redirectByRole(curUser.role);
     }
-    saveState(st);
-    window.location = 'dashboard.html';
-  });
 
-  document.getElementById('btn-demo-reset').addEventListener('click', ()=>{
-    if(confirm('Reset demo data? This clears local data.')){
-      localStorage.removeItem(STORAGE_KEY);
-      alert('Demo data cleared. Reload the page to seed demo again.');
+    function redirectByRole(role) {
+      if (role === 'chef') window.location = 'chef.html';
+      else if (role === 'delivery') window.location = 'delivery.html';
+      else window.location = 'dashboard.html';
     }
-  });
 
-  document.getElementById('login-password').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') document.getElementById('btn-login').click(); });
+    // Toggle password visibility
+    const pwdInput = document.getElementById('login-password');
+    const pwdToggle = document.getElementById('btn-toggle-pwd');
+    pwdToggle.addEventListener('click', () => {
+      if (pwdInput.type === 'password') {
+        pwdInput.type = 'text';
+        pwdToggle.textContent = '🙈';
+      } else {
+        pwdInput.type = 'password';
+        pwdToggle.textContent = '👁️';
+      }
+    });
 
-})();
-</script>
+    // Quick demo chip selection
+    document.querySelectorAll('.demo-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.getElementById('login-email').value = chip.dataset.email;
+        document.getElementById('login-password').value = chip.dataset.pwd;
+        document.getElementById('login-form').dispatchEvent(new Event('submit'));
+      });
+    });
+
+    // Submit login form
+    const loginForm = document.getElementById('login-form');
+    const errorAlert = document.getElementById('login-error');
+    const submitBtn = document.getElementById('btn-login-submit');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorAlert.style.display = 'none';
+
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const remember = document.getElementById('login-remember').checked;
+
+      if (!email || !password) {
+        showError('Please enter both email and password.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = 'Signing in...';
+
+      try {
+        const res = await apiLogin(email, password, remember);
+        if (res.success && res.user) {
+          redirectByRole(res.user.role);
+        } else {
+          showError(res.message || 'Login failed. Please check your credentials.');
+        }
+      } catch (err) {
+        showError(err.message || 'Unable to connect to server. Please try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Sign In';
+      }
+    });
+
+    function showError(msg) {
+      errorAlert.textContent = msg;
+      errorAlert.style.display = 'block';
+    }
+
+    // Forgot password modal
+    const forgotModal = document.getElementById('forgot-modal');
+    const linkForgot = document.getElementById('link-forgot-password');
+    const btnCloseForgot = document.getElementById('btn-close-forgot');
+    const btnCancelForgot = document.getElementById('btn-forgot-cancel');
+    const btnSubmitForgot = document.getElementById('btn-forgot-submit');
+    const forgotFeedback = document.getElementById('forgot-feedback');
+
+    linkForgot.addEventListener('click', (e) => {
+      e.preventDefault();
+      forgotModal.classList.remove('hidden');
+      document.getElementById('forgot-email').value = document.getElementById('login-email').value;
+      forgotFeedback.style.display = 'none';
+    });
+
+    [btnCloseForgot, btnCancelForgot].forEach(btn => {
+      btn.addEventListener('click', () => forgotModal.classList.add('hidden'));
+    });
+
+    btnSubmitForgot.addEventListener('click', async () => {
+      const email = document.getElementById('forgot-email').value.trim();
+      if (!email) {
+        forgotFeedback.style.display = 'block';
+        forgotFeedback.style.color = '#dc2626';
+        forgotFeedback.textContent = 'Please enter your email.';
+        return;
+      }
+      btnSubmitForgot.disabled = true;
+      btnSubmitForgot.textContent = 'Sending...';
+      try {
+        const res = await apiForgotPassword(email);
+        forgotFeedback.style.display = 'block';
+        forgotFeedback.style.color = '#059669';
+        forgotFeedback.textContent = res.message;
+      } catch (err) {
+        forgotFeedback.style.display = 'block';
+        forgotFeedback.style.color = '#dc2626';
+        forgotFeedback.textContent = err.message || 'Failed to send reset link.';
+      } finally {
+        btnSubmitForgot.disabled = false;
+        btnSubmitForgot.textContent = 'Send Reset Link';
+      }
+    });
+  </script>
+</body>
+</html>

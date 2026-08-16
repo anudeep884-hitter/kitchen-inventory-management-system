@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chef Station — Kitchen Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="chef">
+  <header class="header"></header>
+
+  <div class="container grid">
+    <aside></aside>
+
+    <main>
+      <!-- Top Chef Greeting & Quick Stats -->
+      <div class="card" style="padding:18px 22px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <h2 style="font-size:20px;font-weight:800;letter-spacing:-0.3px">👨‍🍳 Chef Culinary Station</h2>
+            <div class="small muted">Search pantry stock, check fresh ingredients, and log prep consumption in real-time</div>
+          </div>
+          <button id="btn-chef-log-consumption" class="btn">📤 Log Ingredient Usage</button>
+        </div>
+      </div>
+
+      <!-- Chef Stat Cards -->
+      <div class="stat-grid" style="grid-template-columns:repeat(auto-fit, minmax(200px, 1fr))">
+        <div class="stat stat-green">
+          <div class="stat-icon-wrapper">🥦</div>
+          <div class="stat-label">Available Ingredients</div>
+          <div class="larger" id="chef-stat-available">0</div>
+          <div class="stat-sub">Ready for service &amp; prep</div>
+        </div>
+
+        <div class="stat stat-amber">
+          <div class="stat-icon-wrapper">⏰</div>
+          <div class="stat-label">Expiring Soon (48-72h)</div>
+          <div class="larger" id="chef-stat-expiring">0</div>
+          <div class="stat-sub"><a href="#expiry-radar" style="color:var(--accent-2);text-decoration:none">Prioritize in specials &rarr;</a></div>
+        </div>
+
+        <div class="stat stat-teal">
+          <div class="stat-icon-wrapper">🍳</div>
+          <div class="stat-label">My Prep Consumption</div>
+          <div class="larger" id="chef-stat-my-usage">0</div>
+          <div class="stat-sub">Units logged today</div>
+        </div>
+      </div>
+
+      <!-- Expiry Radar: Ingredients to Use First -->
+      <div class="card" id="expiry-radar" style="border-left:4px solid #ea580c">
+        <div class="card-header">
+          <div>
+            <div class="card-title" style="color:#ea580c">⏰ Expiry Radar &mdash; Use First</div>
+            <div class="card-subtitle">Ingredients nearing expiry date &mdash; plan today's menu around these items to avoid waste</div>
+          </div>
+        </div>
+        <div id="chef-expiry-list" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:12px">
+          <div class="small muted text-center" style="padding:16px">Loading expiry alerts...</div>
+        </div>
+      </div>
+
+      <!-- Available Ingredients Catalog & Quick Usage Trigger -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Pantry &amp; Cold Storage Ingredients</div>
+            <div class="card-subtitle">Click "Use" on any ingredient to record recipe prep or cooking deduction</div>
+          </div>
+          <div class="search-bar" style="width:260px">
+            <span class="search-icon">🔍</span>
+            <input id="chef-search" class="input" placeholder="Search ingredients..." />
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:48px"></th>
+                <th>Ingredient Name</th>
+                <th>Category</th>
+                <th>In Stock</th>
+                <th>Storage Location</th>
+                <th>Expiry Status</th>
+                <th style="text-align:right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="chef-ingredients-body">
+              <tr><td colspan="7" class="small muted text-center" style="padding:24px">Loading ingredients...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Chef's Recent Activity History -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">My Recent Usage Logs</div>
+            <div class="card-subtitle">Audit record of ingredient consumptions logged by your station</div>
+          </div>
+          <a href="usage.html" class="btn-ghost btn-sm">Full Usage Log &rarr;</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Ingredient</th>
+                <th>Quantity Used</th>
+                <th>Reason / Recipe</th>
+                <th>Date &amp; Time</th>
+              </tr>
+            </thead>
+            <tbody id="chef-recent-usage-body">
+              <tr><td colspan="4" class="small muted text-center" style="padding:20px">No recent usage logged</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Chef Quick Ingredient Usage Modal -->
+  <div id="chef-use-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Ingredient Usage</h3>
+        <button class="btn-close" id="btn-close-chef-modal">&times;</button>
+      </div>
+      <form id="chef-use-form">
+        <div class="form-group">
+          <label class="form-label" for="chef-item-select">Select Ingredient *</label>
+          <select id="chef-item-select" class="input" required></select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="chef-use-qty">Quantity to Use *</label>
+            <input id="chef-use-qty" class="input" type="number" step="any" min="0.01" required placeholder="e.g. 2.5" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="chef-use-unit">Unit</label>
+            <input id="chef-use-unit" class="input" readonly placeholder="Unit" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="chef-use-reason">Culinary Reason / Recipe *</label>
+          <input id="chef-use-reason" class="input" required placeholder="e.g. Dinner Curry Prep, Omelette Station, Sauce batch" list="reason-presets" />
+          <datalist id="reason-presets">
+            <option value="Breakfast Station Prep">
+            <option value="Lunch Service Buffet">
+            <option value="Dinner Special Prep">
+            <option value="Sauce & Gravy Base">
+            <option value="Baking & Pastry Batch">
+            <option value="Staff Meal Prep">
+            <option value="Recipe Tasting & Testing">
+          </datalist>
+        </div>
+
+        <div class="actions-row">
+          <button type="button" class="btn-ghost btn-sm" id="btn-cancel-chef-modal">Cancel</button>
+          <button type="submit" class="btn btn-sm">Confirm &amp; Deduct Stock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      requireAuth,
+      renderAppShell,
+      apiGetInventory,
+      apiStockOperation,
+      apiGetTransactions,
+      formatStatusBadge,
+      formatDate,
+      showToast
+    } from './shared.js';
+
+    // Allow Chef and Admin
+    const user = requireAuth(['chef', 'admin']);
+    if (!user) { /* redirected */ }
+
+    renderAppShell('chef');
+
+    let inventory = [];
+
+    async function loadChefDashboard() {
+      try {
+        const [invRes, txRes] = await Promise.all([
+          apiGetInventory(),
+          apiGetTransactions({ userId: user.id })
+        ]);
+
+        if (invRes.success) {
+          inventory = invRes.items || [];
+          renderChefStats();
+          renderExpiryRadar();
+          renderIngredientsTable();
+          populateIngredientSelect();
+        }
+
+        if (txRes.success) {
+          renderRecentUsage(txRes.transactions || []);
+        }
+      } catch (err) {
+        showToast('Error loading Chef dashboard: ' + err.message, 'error');
+      }
+    }
+
+    function renderChefStats() {
+      const avail = inventory.filter(i => Number(i.qty) > 0).length;
+      const expiring = inventory.filter(i => i.status === 'EXPIRING_SOON' || i.status === 'EXPIRED').length;
+      document.getElementById('chef-stat-available').textContent = avail;
+      document.getElementById('chef-stat-expiring').textContent = expiring;
+    }
+
+    function renderExpiryRadar() {
+      const listContainer = document.getElementById('chef-expiry-list');
+      const expiringItems = inventory.filter(i => i.status === 'EXPIRING_SOON' || i.status === 'EXPIRED');
+
+      if (!expiringItems.length) {
+        listContainer.innerHTML = '<div class="small muted text-center" style="grid-column:1/-1;padding:16px">✅ No items near expiry! All kitchen stock is fresh.</div>';
+        return;
+      }
+
+      listContainer.innerHTML = expiringItems.map(item => `
+        <div style="background:#ffffff;padding:12px;border-radius:10px;border:1px solid #fed7aa;display:flex;align-items:center;justify-content:space-between">
+          <div class="item-cell">
+            <img class="item-thumb" src="${item.icon || 'assets/basmati-rice.svg'}" alt="${item.name}" onerror="this.src='assets/basmati-rice.svg'">
+            <div>
+              <div style="font-weight:700;font-size:13.5px">${item.name}</div>
+              <div class="small muted">${item.qty} ${item.unit} &bull; Exp: ${formatDate(item.expiry)}</div>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-quick-use" data-id="${item.id}" style="padding:4px 8px;font-size:11.5px">Use Now</button>
+        </div>
+      `).join('');
+
+      document.querySelectorAll('.btn-quick-use').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const it = inventory.find(x => x.id === btn.dataset.id);
+          if (it) openUseModal(it);
+        });
+      });
+    }
+
+    function renderIngredientsTable() {
+      const tbody = document.getElementById('chef-ingredients-body');
+      const q = (document.getElementById('chef-search')?.value || '').trim().toLowerCase();
+
+      const filtered = inventory.filter(it => {
+        if (q && !(it.name || '').toLowerCase().includes(q) && !(it.category || '').toLowerCase().includes(q) && !(it.location || '').toLowerCase().includes(q)) return false;
+        return true;
+      });
+
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="small muted text-center" style="padding:24px">No matching ingredients found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => `
+        <tr>
+          <td style="width:48px">
+            <img class="item-thumb" src="${item.icon || 'assets/basmati-rice.svg'}" alt="${item.name}" onerror="this.src='assets/basmati-rice.svg'">
+          </td>
+          <td>
+            <div class="item-title">${item.name}</div>
+            <div class="item-sub">${item.unit} &bull; Batch: ${item.batchNo || 'N/A'}</div>
+          </td>
+          <td>${item.category}</td>
+          <td style="font-weight:700;color:${Number(item.qty) <= Number(item.minStock) ? '#d97706' : 'inherit'}">${item.qty} ${item.unit}</td>
+          <td class="small">${item.location || 'Kitchen Pantry'}</td>
+          <td>${formatStatusBadge(item.status)}</td>
+          <td style="text-align:right">
+            <button class="btn btn-sm btn-table-use" data-id="${item.id}">📤 Use</button>
+          </td>
+        </tr>
+      `).join('');
+
+      document.querySelectorAll('.btn-table-use').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const it = inventory.find(x => x.id === btn.dataset.id);
+          if (it) openUseModal(it);
+        });
+      });
+    }
+
+    function renderRecentUsage(txs) {
+      const tbody = document.getElementById('chef-recent-usage-body');
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const myTodayTotal = txs
+        .filter(t => t.operation === 'USE_STOCK' && t.timestamp && t.timestamp.startsWith(todayStr))
+        .reduce((sum, t) => sum + (t.quantity || 0), 0);
+      document.getElementById('chef-stat-my-usage').textContent = Number(myTodayTotal.toFixed(1));
+
+      if (!txs || !txs.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="small muted text-center" style="padding:20px">No recent usage recorded yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = txs.slice(0, 6).map(t => `
+        <tr>
+          <td style="font-weight:600">${t.itemName}</td>
+          <td style="font-weight:700;color:#2563eb">${t.quantity} ${t.unit || ''}</td>
+          <td class="small">${t.reason || 'Prep Usage'}</td>
+          <td class="small muted">${formatDate(t.timestamp)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function populateIngredientSelect() {
+      const select = document.getElementById('chef-item-select');
+      select.innerHTML = '<option value="">-- Select Ingredient --</option>' +
+        inventory.map(i => `<option value="${i.id}" data-unit="${i.unit}" data-qty="${i.qty}">${i.name} (${i.qty} ${i.unit} available in ${i.location || 'Pantry'})</option>`).join('');
+    }
+
+    // Modal logic
+    const modal = document.getElementById('chef-use-modal');
+    const itemSelect = document.getElementById('chef-item-select');
+    const unitInput = document.getElementById('chef-use-unit');
+
+    function openUseModal(item) {
+      document.getElementById('chef-use-form').reset();
+      if (item) {
+        itemSelect.value = item.id;
+        unitInput.value = item.unit;
+      } else {
+        unitInput.value = '';
+      }
+      modal.classList.remove('hidden');
+    }
+
+    itemSelect.addEventListener('change', () => {
+      const selected = itemSelect.selectedOptions[0];
+      if (selected && selected.dataset.unit) {
+        unitInput.value = selected.dataset.unit;
+      } else {
+        unitInput.value = '';
+      }
+    });
+
+    document.getElementById('btn-chef-log-consumption').addEventListener('click', () => openUseModal(null));
+
+    [document.getElementById('btn-close-chef-modal'), document.getElementById('btn-cancel-chef-modal')].forEach(btn => {
+      btn.addEventListener('click', () => modal.classList.add('hidden'));
+    });
+
+    document.getElementById('chef-use-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const itemId = itemSelect.value;
+      const qty = parseFloat(document.getElementById('chef-use-qty').value);
+      const reason = document.getElementById('chef-use-reason').value.trim();
+
+      if (!itemId || isNaN(qty) || qty <= 0) {
+        alert('Please select an ingredient and enter a valid quantity.');
+        return;
+      }
+
+      try {
+        const res = await apiStockOperation(itemId, 'USE_STOCK', qty, reason);
+        if (res.success) {
+          showToast(res.message, 'success');
+          modal.classList.add('hidden');
+          loadChefDashboard();
+        }
+      } catch (err) {
+        showToast(err.message || 'Usage deduction failed', 'error');
+      }
+    });
+
+    document.getElementById('chef-search')?.addEventListener('input', renderIngredientsTable);
+
+    loadChefDashboard();
+  </script>
+</body>
+</html>

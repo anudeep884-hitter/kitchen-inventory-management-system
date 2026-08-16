@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Notification Center — Kitchen Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="notifications">
+  <header class="header"></header>
+
+  <div class="container grid">
+    <aside></aside>
+
+    <main>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Notification Center</h2>
+            <div class="card-subtitle">Critical pantry warnings, expiry alerts, low-stock notifications, and inventory updates</div>
+          </div>
+          <div class="btn-group">
+            <button id="btn-mark-all-read" class="btn-ghost btn-sm">✔️ Mark All as Read</button>
+            <button id="btn-clear-all-notifs" class="btn-ghost btn-sm" style="color:#ef4444">🗑️ Clear All</button>
+          </div>
+        </div>
+
+        <!-- Filter Category Pills -->
+        <div class="pills-group" style="margin-bottom:16px">
+          <button class="pill active" data-filter="ALL">All Notifications (<span id="count-all">0</span>)</button>
+          <button class="pill" data-filter="EXPIRED">🔴 Expired (<span id="count-expired">0</span>)</button>
+          <button class="pill" data-filter="EXPIRING_SOON">🟠 Expiring Soon (<span id="count-expiring">0</span>)</button>
+          <button class="pill" data-filter="LOW_STOCK">🟡 Low Stock (<span id="count-low">0</span>)</button>
+          <button class="pill" data-filter="RESTOCKED">🟢 Stock Inbound (<span id="count-restocked">0</span>)</button>
+        </div>
+
+        <!-- Notifications List Container -->
+        <div id="notifications-container" style="display:flex;flex-direction:column;gap:10px">
+          <div class="small muted text-center" style="padding:32px">Loading notifications...</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import {
+      requireAuth,
+      renderAppShell,
+      apiGetNotifications,
+      apiMarkNotificationRead,
+      apiMarkAllNotificationsRead,
+      apiClearNotifications,
+      formatDate,
+      showToast
+    } from './shared.js';
+
+    const user = requireAuth(['admin', 'chef', 'delivery']);
+    if (!user) { /* redirected */ }
+
+    renderAppShell('notifications');
+
+    let allNotifs = [];
+    let currentFilter = 'ALL';
+
+    async function loadNotifications() {
+      try {
+        const res = await apiGetNotifications();
+        if (res.success) {
+          allNotifs = res.notifications || [];
+          updateCounts();
+          renderNotifsList();
+        }
+      } catch (err) {
+        showToast('Error loading notifications: ' + err.message, 'error');
+      }
+    }
+
+    function updateCounts() {
+      document.getElementById('count-all').textContent = allNotifs.length;
+      document.getElementById('count-expired').textContent = allNotifs.filter(n => n.type === 'EXPIRED').length;
+      document.getElementById('count-expiring').textContent = allNotifs.filter(n => n.type === 'EXPIRING_SOON').length;
+      document.getElementById('count-low').textContent = allNotifs.filter(n => n.type === 'LOW_STOCK').length;
+      document.getElementById('count-restocked').textContent = allNotifs.filter(n => n.type === 'RESTOCKED' || n.type === 'ADD_STOCK').length;
+    }
+
+    function renderNotifsList() {
+      const container = document.getElementById('notifications-container');
+      const filtered = allNotifs.filter(n => {
+        if (currentFilter === 'ALL') return true;
+        if (currentFilter === 'RESTOCKED') return n.type === 'RESTOCKED' || n.type === 'ADD_STOCK';
+        return n.type === currentFilter;
+      });
+
+      if (!filtered.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🔔</div>
+            <div style="font-weight:700;color:var(--text-main)">No notifications in this category</div>
+            <div class="small muted">All inventory parameters are currently within normal thresholds.</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(n => {
+        let icon = '🔔';
+        let bgStyle = '#f8fafc';
+        let borderStyle = '#e2e8f0';
+
+        if (n.type === 'EXPIRED') {
+          icon = '🔴';
+          bgStyle = '#fef2f2';
+          borderStyle = '#fecaca';
+        } else if (n.type === 'EXPIRING_SOON') {
+          icon = '🟠';
+          bgStyle = '#fff7ed';
+          borderStyle = '#ffedd5';
+        } else if (n.type === 'LOW_STOCK') {
+          icon = '🟡';
+          bgStyle = '#fffbeb';
+          borderStyle = '#fde68a';
+        } else if (n.type === 'RESTOCKED') {
+          icon = '🟢';
+          bgStyle = '#ecfdf5';
+          borderStyle = '#a7f3d0';
+        }
+
+        return `
+          <div style="background:${bgStyle};border:1px solid ${borderStyle};padding:14px 18px;border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;opacity:${n.read ? '0.75' : '1'}">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <span style="font-size:20px">${icon}</span>
+              <div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-weight:700;font-size:14px;color:var(--text-main)">${n.title}</span>
+                  ${!n.read ? '<span class="badge badge-expired" style="font-size:10px;padding:1px 6px">Unread</span>' : ''}
+                </div>
+                <div class="small" style="color:var(--text-main);margin-top:2px">${n.message}</div>
+                <div class="small muted" style="font-size:11px;margin-top:4px">${formatDate(n.timestamp)}</div>
+              </div>
+            </div>
+            ${!n.read ? `<button class="btn-ghost btn-sm btn-mark-read" data-id="${n.id}">Mark Read</button>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.btn-mark-read').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try {
+            await apiMarkNotificationRead(btn.dataset.id);
+            loadNotifications();
+          } catch (e) {
+            showToast('Failed to update', 'error');
+          }
+        });
+      });
+    }
+
+    // Filter pill buttons
+    document.querySelectorAll('.pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        currentFilter = pill.dataset.filter;
+        renderNotifsList();
+      });
+    });
+
+    document.getElementById('btn-mark-all-read').addEventListener('click', async () => {
+      try {
+        const res = await apiMarkAllNotificationsRead();
+        if (res.success) {
+          showToast('All notifications marked as read', 'success');
+          loadNotifications();
+        }
+      } catch (e) {
+        showToast('Error updating alerts', 'error');
+      }
+    });
+
+    document.getElementById('btn-clear-all-notifs').addEventListener('click', async () => {
+      if (confirm('Clear all notifications?')) {
+        try {
+          const res = await apiClearNotifications();
+          if (res.success) {
+            showToast('Notifications cleared', 'success');
+            loadNotifications();
+          }
+        } catch (e) {
+          showToast('Error clearing alerts', 'error');
+        }
+      }
+    });
+
+    loadNotifications();
+  </script>
+</body>
+</html>
